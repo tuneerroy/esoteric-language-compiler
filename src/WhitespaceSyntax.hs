@@ -1,14 +1,36 @@
-module WhitespaceSyntax where
+module WhitespaceSyntax (WBop(..), WCond(..), WVal, WInstruction(..)) where
 
-data Token = Space | Tab | LF deriving (Eq, Show)
-type Val = Int
-type Label = [Token]
+data WBop = Add | Sub | Mul | Div | Mod deriving (Eq, Show)
+data WCond = Any | Zero | Neg deriving (Eq, Show)
+-- In the offical implementation, stack values are Integer
+-- But that would be a pain to convert assembly to
+type WVal = Int
 
-data Command
-  = InputChar | InputNum | OutputChar | OutputNum
-  | Push Val | Dup | Swap | Discard
-  | Add | Sub | Mul | Div | Mod
-  | Mark Label | CallSub Label | Jump Label | BranchZ Label | BranchN Label | EndSub | EndProg
-  | Store | Retrieve
+data WInstruction l
+-- IO
+  = InputChar
+  | InputNum
+  | OutputChar
+  | OutputNum
+-- Stack
+  | Push WVal
+  | Dup
+  | Swap
+  | Discard
+  | Copy WVal
+  | Slide WVal
+-- Arithmetic
+  | Arith WBop
+-- Flow Control
+  | Label l
+  | Call l
+  | Branch WCond l
+  | Return
+  | End
+-- Heap Access
+  | Store
+  | Retrieve
+  deriving (Functor, Foldable, Traversable)
 
-type Block = [Command]
+deriving instance Eq l => Eq (WInstruction l)
+deriving instance Show l => Show (WInstruction l)

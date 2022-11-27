@@ -7,40 +7,43 @@ import Data.List (foldl')
 import Data.Maybe (mapMaybe)
 import GHC.Base ((<|>))
 import Parser ( Parser, token, tokens )
-import WhitespaceSyntax (Block, Command (..), Label, Token (..), Val)
+import WhitespaceSyntax (WBop(..), WCond(..), WVal(..), WInstruction(..))
 import Prelude hiding (filter)
+import Control.Monad.State (StateT(StateT))
 
-type WParser a = Parser Token a
+data WToken = Space | Tab | LF deriving (Eq, Show, Ord)
+type Command = WInstruction [WToken]
+type WParser a = Parser WToken a
 
 -- This could be done with a Read instance for Token (maybe change later)
-parseToken :: Char -> Maybe Token
+parseToken :: Char -> Maybe WToken
 parseToken ' ' = Just Space
 parseToken '\t' = Just Tab
 parseToken '\n' = Just LF
 parseToken _ = Nothing
 
-tokenize :: String -> [Token]
+tokenize :: String -> [WToken]
 tokenize = mapMaybe parseToken
 
-constPTok :: Token -> a -> WParser a
+constPTok :: WToken -> a -> WParser a
 constPTok t = (token t $>)
 
-constP :: [Token] -> a -> WParser a
+constP :: [WToken] -> a -> WParser a
 constP ts = (tokens ts $>)
 
-numberP :: WParser Val
+numberP :: WParser WVal
 numberP =
   (constPTok Space negate <|> constPTok Tab id)
     <*> (binToNum <$> some (constPTok Space 0 <|> constPTok Tab 1))
   where
-    binToNum :: [Int] -> Val
+    binToNum :: [WVal] -> WVal
     binToNum = foldl' (\acc x -> acc * 2 + x) 0
 
-labelP :: WParser Label
+labelP :: WParser [WToken]
 labelP = some (token Space <|> token Tab)
 
 commandP :: WParser Command
-commandP = asum [ioP, stackP, arithP, flowP, heapP] <* (token LF <|> pure [])
+commandP = asum [ioP, stackP, arithP, flowP, heapP]
   where
     ioP :: WParser Command
     ioP =
@@ -63,24 +66,24 @@ commandP = asum [ioP, stackP, arithP, flowP, heapP] <* (token LF <|> pure [])
     arithP :: WParser Command
     arithP =
       tokens [Tab, Space]
-        *> asum
+        *> (Arith <$> asum
           [ constP [Space, Space] Add,
             constP [Space, Tab] Sub,
             constP [Space, LF] Mul,
             constP [Tab, Space] Div,
             constP [Tab, Tab] Mod
-          ]
+          ])
     flowP :: WParser Command
     flowP =
       token LF
         *> asum
-          [ constP [Space, Space] Mark <*> labelP,
-            constP [Space, Tab] CallSub <*> labelP,
-            constP [Space, LF] Jump <*> labelP,
-            constP [Tab, Space] BranchZ <*> labelP,
-            constP [Tab, Tab] BranchN <*> labelP,
-            constP [Tab, LF] EndSub,
-            constP [LF, LF] EndProg
+          [ constP [Space, Space] Label <*> labelP,
+            constP [Space, Tab] Call <*> labelP,
+            constP [Space, LF] (Branch Any) <*> labelP,
+            constP [Tab, Space] (Branch Zero) <*> labelP,
+            constP [Tab, Tab] (Branch Neg) <*> labelP,
+            constP [Tab, LF] Return,
+            constP [LF, LF] End
           ]
     heapP :: WParser Command
     heapP =
@@ -88,5 +91,5 @@ commandP = asum [ioP, stackP, arithP, flowP, heapP] <* (token LF <|> pure [])
         *> constPTok Space Store
         <|> constPTok Tab Retrieve
 
-blockP :: WParser Block
-blockP = many commandP
+blockP :: WParser [Command]
+blockP = many (commandP <* token LF <|> commandP)
