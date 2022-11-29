@@ -1,15 +1,21 @@
-module WhitespaceParser where
+module WhitespaceParser (tokenize, commandP, blockP) where
 
 import Control.Applicative (Alternative (many, some))
 import Data.Foldable (asum)
 import Data.Functor (($>))
-import Data.List (foldl')
+import Data.List (foldl', intercalate)
 import Data.Maybe (mapMaybe)
 import GHC.Base ((<|>))
-import Parser ( Parser, token, tokens )
+import Parser ( Parser, token, tokens, parse )
 import WhitespaceSyntax (WBop(..), WCond(..), WVal(..), WInstruction(..))
 import Prelude hiding (filter)
 import Control.Monad.State (StateT(StateT))
+
+-- | For tests
+-- | For tests
+import Test.QuickCheck (Arbitrary(..), Gen(..), oneof, suchThat, listOf)
+import Test.QuickCheck.Gen (elements)
+import Control.Applicative (Applicative(liftA2))
 
 data WToken = Space | Tab | LF deriving (Eq, Show, Ord)
 type Command = WInstruction [WToken]
@@ -93,3 +99,46 @@ commandP = asum [ioP, stackP, arithP, flowP, heapP]
 
 blockP :: WParser [Command]
 blockP = many (commandP <* token LF <|> commandP)
+
+
+-- | Tests
+
+instance Arbitrary WToken where
+  arbitrary :: Gen WToken
+  arbitrary = elements [Space, Tab, LF]
+
+commandToTokens :: Command -> [WToken]
+commandToTokens = undefined
+
+blockToTokens :: [Command] -> [WToken]
+blockToTokens = intercalate [LF] . map commandToTokens
+
+prop_roundtrip_tokens :: [Command] -> Bool
+prop_roundtrip_tokens cs = case parse blockP $ blockToTokens cs of
+  Nothing -> False
+  Just parseResult -> cs == parseResult
+
+tokenToChar :: WToken -> Char
+tokenToChar Space = ' '
+tokenToChar Tab = '\t'
+tokenToChar LF = '\n'
+
+newtype WProgramString = WP String
+
+instance Arbitrary WProgramString where
+  arbitrary :: Gen WProgramString
+  arbitrary = WP <$> (arbitrary >>= mixGarbage . map tokenToChar . blockToTokens)
+    where
+      garbageChar :: Gen Char
+      garbageChar = suchThat arbitrary (`notElem` [' ', '\n', '\t'])
+      
+      mixGarbage :: String -> Gen String
+      mixGarbage [] = listOf garbageChar
+      mixGarbage s@(c : cs) =
+        oneof [(c :) <$> mixGarbage cs, (:) <$> garbageChar <*> mixGarbage s]
+
+prop_program_parse :: WProgramString -> Bool
+prop_program_parse (WP s) = case parse blockP $ tokenize s of
+  Nothing -> False
+  Just _ -> True
+

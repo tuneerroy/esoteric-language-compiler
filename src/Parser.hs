@@ -3,7 +3,7 @@
 module Parser where
 
 import Control.Monad (guard)
-import Control.Monad.State (StateT (StateT), runStateT)
+import Control.Monad.State (StateT (StateT), runStateT, evalStateT)
 import Prelude hiding (filter)
 
 type Parser t a = StateT [t] Maybe a
@@ -28,3 +28,5 @@ token t = satisfy (t ==)
 tokens :: Eq t => [t] -> Parser t [t]
 tokens = foldr (\t p -> (:) <$> token t <*> p) (pure [])
 
+parse :: Parser t a -> [t] -> Maybe a
+parse = evalStateT

@@ -7,6 +7,8 @@ import Stepper (Index, PC (..), Steppable (..), mkSteppable)
 import WhitespaceParser ()
 import WhitespaceSyntax (WInstruction (Label), WVal)
 
+-- | Tests
+
 type WSteppable = Steppable WInstruction
 
 wMkSteppable ::
@@ -55,3 +57,5 @@ wExec = execState . wEval
 
 wStepper :: IO ()
 wStepper = undefined
+
+-- | Tests

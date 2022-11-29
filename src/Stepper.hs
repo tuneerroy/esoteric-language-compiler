@@ -17,7 +17,7 @@ data Steppable i = Steppable {
     program :: Array Int (i Int)
 }
 
--- Create a steppable out of a list of instructions
+-- | Create a steppable out of a list of instructions
 mkSteppable :: forall i t. (Eq t, Ord t, Functor i, Traversable i) =>
     (i t -> Maybe t) -> [i t] -> Maybe (Steppable i)
 mkSteppable extractLabel block = do
