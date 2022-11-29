@@ -1,4 +1,4 @@
-module WhitespaceParser (tokenize, commandP, blockP) where
+module WhitespaceParser (wParse) where
 
 import Control.Applicative (Alternative (many, some))
 import Data.Foldable (asum)
@@ -12,29 +12,28 @@ import Prelude hiding (filter)
 import Control.Monad.State (StateT(StateT))
 
 -- | For tests
--- | For tests
 import Test.QuickCheck (Arbitrary(..), Gen(..), oneof, suchThat, listOf)
 import Test.QuickCheck.Gen (elements)
 import Control.Applicative (Applicative(liftA2))
 
-data WToken = Space | Tab | LF deriving (Eq, Show, Ord)
-type Command = WInstruction [WToken]
-type WParser a = Parser WToken a
+data Token = Space | Tab | LF deriving (Eq, Show, Ord)
+type Command = WInstruction [Token]
+type WParser a = Parser Token a
 
 -- This could be done with a Read instance for Token (maybe change later)
-parseToken :: Char -> Maybe WToken
+parseToken :: Char -> Maybe Token
 parseToken ' ' = Just Space
 parseToken '\t' = Just Tab
 parseToken '\n' = Just LF
 parseToken _ = Nothing
 
-tokenize :: String -> [WToken]
+tokenize :: String -> [Token]
 tokenize = mapMaybe parseToken
 
-constPTok :: WToken -> a -> WParser a
+constPTok :: Token -> a -> WParser a
 constPTok t = (token t $>)
 
-constP :: [WToken] -> a -> WParser a
+constP :: [Token] -> a -> WParser a
 constP ts = (tokens ts $>)
 
 numberP :: WParser WVal
@@ -45,7 +44,7 @@ numberP =
     binToNum :: [WVal] -> WVal
     binToNum = foldl' (\acc x -> acc * 2 + x) 0
 
-labelP :: WParser [WToken]
+labelP :: WParser [Token]
 labelP = some (token Space <|> token Tab)
 
 commandP :: WParser Command
@@ -100,17 +99,19 @@ commandP = asum [ioP, stackP, arithP, flowP, heapP]
 blockP :: WParser [Command]
 blockP = many (commandP <* token LF <|> commandP)
 
+wParse :: String -> Maybe [Command]
+wParse = parse blockP . tokenize
 
 -- | Tests
 
-instance Arbitrary WToken where
-  arbitrary :: Gen WToken
+instance Arbitrary Token where
+  arbitrary :: Gen Token
   arbitrary = elements [Space, Tab, LF]
 
-commandToTokens :: Command -> [WToken]
+commandToTokens :: Command -> [Token]
 commandToTokens = undefined
 
-blockToTokens :: [Command] -> [WToken]
+blockToTokens :: [Command] -> [Token]
 blockToTokens = intercalate [LF] . map commandToTokens
 
 prop_roundtrip_tokens :: [Command] -> Bool
@@ -118,7 +119,7 @@ prop_roundtrip_tokens cs = case parse blockP $ blockToTokens cs of
   Nothing -> False
   Just parseResult -> cs == parseResult
 
-tokenToChar :: WToken -> Char
+tokenToChar :: Token -> Char
 tokenToChar Space = ' '
 tokenToChar Tab = '\t'
 tokenToChar LF = '\n'
