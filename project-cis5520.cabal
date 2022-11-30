@@ -27,7 +27,7 @@ common common-stanza
     , containers
     , filepath
     , pretty
-    -- , network
+    , network
     , directory
     , random
     , mtl
