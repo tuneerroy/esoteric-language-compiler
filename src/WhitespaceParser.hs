@@ -1,23 +1,24 @@
 module WhitespaceParser (wParse) where
 
-import Control.Applicative (Alternative (many, some))
+-- For tests
+
+import Control.Applicative (Alternative (many, some), Applicative (liftA2))
+import Control.Monad.State (StateT (StateT))
 import Data.Foldable (asum)
 import Data.Functor (($>))
 import Data.List (foldl', intercalate)
 import Data.Maybe (mapMaybe)
 import GHC.Base ((<|>))
-import Parser ( Parser, token, tokens, parse )
-import WhitespaceSyntax (WBop(..), WCond(..), WVal(..), WInstruction(..))
-import Prelude hiding (filter)
-import Control.Monad.State (StateT(StateT))
-
--- | For tests
-import Test.QuickCheck (Arbitrary(..), Gen(..), oneof, suchThat, listOf)
+import Parser (Parser, parse, token, tokens)
+import Test.QuickCheck (Arbitrary (..), Gen (..), listOf, oneof, suchThat)
 import Test.QuickCheck.Gen (elements)
-import Control.Applicative (Applicative(liftA2))
+import WhitespaceSyntax (WBop (..), WCond (..), WInstruction (..), WVal (..))
+import Prelude hiding (filter)
 
 data Token = Space | Tab | LF deriving (Eq, Show, Ord)
+
 type Command = WInstruction [Token]
+
 type WParser a = Parser Token a
 
 -- This could be done with a Read instance for Token (maybe change later)
@@ -71,13 +72,15 @@ commandP = asum [ioP, stackP, arithP, flowP, heapP]
     arithP :: WParser Command
     arithP =
       tokens [Tab, Space]
-        *> (Arith <$> asum
-          [ constP [Space, Space] Add,
-            constP [Space, Tab] Sub,
-            constP [Space, LF] Mul,
-            constP [Tab, Space] Div,
-            constP [Tab, Tab] Mod
-          ])
+        *> ( Arith
+               <$> asum
+                 [ constP [Space, Space] Add,
+                   constP [Space, Tab] Sub,
+                   constP [Space, LF] Mul,
+                   constP [Tab, Space] Div,
+                   constP [Tab, Tab] Mod
+                 ]
+           )
     flowP :: WParser Command
     flowP =
       token LF
@@ -103,7 +106,6 @@ wParse :: String -> Maybe [Command]
 wParse = parse blockP . tokenize
 
 -- | Tests
-
 instance Arbitrary Token where
   arbitrary :: Gen Token
   arbitrary = elements [Space, Tab, LF]
@@ -132,7 +134,7 @@ instance Arbitrary WProgramString where
     where
       garbageChar :: Gen Char
       garbageChar = suchThat arbitrary (`notElem` [' ', '\n', '\t'])
-      
+
       mixGarbage :: String -> Gen String
       mixGarbage [] = listOf garbageChar
       mixGarbage s@(c : cs) =
@@ -142,4 +144,3 @@ prop_program_parse :: WProgramString -> Bool
 prop_program_parse (WP s) = case parse blockP $ tokenize s of
   Nothing -> False
   Just _ -> True
-

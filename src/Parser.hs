@@ -3,10 +3,10 @@
 module Parser where
 
 import Control.Monad (guard)
-import Control.Monad.State (StateT (StateT), runStateT, evalStateT)
+import Control.Monad.State (StateT (StateT), evalStateT, runStateT)
+import System.IO qualified as IO
+import System.IO.Error qualified as IO
 import Prelude hiding (filter)
-import qualified System.IO.Error as IO
-import qualified System.IO as IO
 
 -- | Test modules
 
@@ -57,8 +57,9 @@ parseToEither p s = case parse p s of
 parseFromFile :: Parser Char a -> FilePath -> IO (Either String a)
 parseFromFile parser filename = do
   IO.catchIOError
-    (do
+    ( do
         handle <- IO.openFile filename IO.ReadMode
         str <- IO.hGetContents handle
-        pure $ parseToEither parser str)
+        pure $ parseToEither parser str
+    )
     (return . Left . show)

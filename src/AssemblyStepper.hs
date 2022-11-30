@@ -1,10 +1,10 @@
 module AssemblyStepper where
 
+import AssemblySyntax (AInstruction (Label))
 import Control.Monad.State (State, execState)
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Stepper (Index, PC (..), Steppable (..), mkSteppable)
-import AssemblySyntax (AInstruction (Label))
 
 -- | Tests
 type WSteppable = Steppable AInstruction

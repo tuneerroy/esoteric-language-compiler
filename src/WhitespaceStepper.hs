@@ -8,7 +8,6 @@ import WhitespaceParser ()
 import WhitespaceSyntax (WInstruction (Label), WVal)
 
 -- | Tests
-
 type WSteppable = Steppable WInstruction
 
 wMkSteppable ::
