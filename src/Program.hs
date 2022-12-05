@@ -1,9 +1,10 @@
 module Program where
-import GHC.Arr (Array, listArray)
+
+import Control.Monad.State (MonadState (get, put), State)
+import Control.Monad.State.Lazy (evalState)
 import Data.Map (Map)
 import Data.Map qualified as Map
-import Control.Monad.State (State, MonadState (get, put))
-import Control.Monad.State.Lazy (evalState)
+import GHC.Arr (Array, listArray)
 
 -- | An instruction in a program can have a text label
 --   that can be replaced by an index at compile time
@@ -18,12 +19,12 @@ listToArray l = listArray (0, length l - 1) l
 
 -- | Converts a block into a program
 mkProgram :: forall i l. (Ord l, Instruction i) => [i l] -> Maybe (Program i)
-mkProgram block = listToArray <$> traverse (relabel table) block' where
-
-    -- | Evaluation of getLabels
+mkProgram block = listToArray <$> traverse (relabel table) block'
+  where
+    -- \| Evaluation of getLabels
     (block', table) = evalState (getLabels block) 0
 
-    -- | Removes all label instructions and builds a map from label to index
+    -- \| Removes all label instructions and builds a map from label to index
     getLabels :: [i l] -> State Int ([i l], Map l Int)
     getLabels [] = return ([], Map.empty)
     getLabels (x : xs) = do
@@ -37,10 +38,8 @@ mkProgram block = listToArray <$> traverse (relabel table) block' where
           (block, labelLookup) <- getLabels xs
           return (block, Map.insert label count labelLookup)
 
-    -- | Given a conversion from string label to index label, perform it
+    -- \| Given a conversion from string label to index label, perform it
     relabel :: Map l Int -> i l -> Maybe (i Int)
     relabel labelLookup = traverse (`Map.lookup` labelLookup)
 
-class Monad m => ProgramState m where
-  getPC :: m Int
-  putPC :: Int -> m ()
+type ProgramState s m = MonadState (s, Int) m
