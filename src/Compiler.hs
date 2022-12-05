@@ -1,9 +1,9 @@
 module Compiler where
-import WhitespaceSyntax (WInstruction)
-import AssemblySyntax (ACommand)
+import WSyntax (WInstruction)
+import ASyntax (AInstruction)
 
-compileCommand :: Eq a => WInstruction a -> [ACommand String]
+compileCommand :: Eq a => WInstruction a -> [AInstruction String]
 compileCommand = undefined
 
-compileProgram :: Eq a => [WInstruction a] -> [ACommand String]
+compileProgram :: Eq a => [WInstruction a] -> [AInstruction String]
 compileProgram = concatMap compileCommand

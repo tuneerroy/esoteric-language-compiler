@@ -1,4 +1,4 @@
-module WhitespaceParser (wParse) where
+module WParser (wParse) where
 
 import Control.Applicative (Alternative (many, some))
 import Data.Foldable (asum)
@@ -7,7 +7,7 @@ import Data.List (foldl', intercalate)
 import Data.Maybe (mapMaybe)
 import GHC.Base ((<|>))
 import Parser ( Parser, token, tokens, parse )
-import WhitespaceSyntax (WBop(..), WCond(..), WVal(..), WInstruction(..))
+import WSyntax (WBop(..), WCond(..), WVal(..), WInstruction(..))
 import Prelude hiding (filter)
 import Control.Monad.State (StateT(StateT))
 

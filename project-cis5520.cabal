@@ -86,13 +86,13 @@ library
   import:
       common-stanza
   exposed-modules:
-      Lib,
       Parser,
-      Stepper,
-      WhitespaceSyntax,
-      WhitespaceParser,
-      WhitespaceStepper,
-      AssemblySyntax
+      Program,
+      WSyntax,
+      WParser,
+      ASyntax,
+      Compiler
+      
   hs-source-dirs:
       src
   default-language: Haskell2010

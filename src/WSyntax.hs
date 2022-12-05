@@ -1,4 +1,5 @@
-module WhitespaceSyntax (WBop(..), WCond(..), WVal, WInstruction(..)) where
+module WSyntax (WBop(..), WCond(..), WVal, WInstruction(..)) where
+import Program
 import Test.QuickCheck (Arbitrary (arbitrary, shrink), Gen)
 import Test.QuickCheck.Gen (oneof, elements)
 
@@ -36,6 +37,11 @@ data WInstruction l
 
 deriving instance Eq l => Eq (WInstruction l)
 deriving instance Show l => Show (WInstruction l)
+
+instance Instruction WInstruction where
+  extractLabel :: WInstruction l -> Maybe l
+  extractLabel (Label l) = Just l
+  extractLabel _ = Nothing
 
 instance Arbitrary l => Arbitrary (WInstruction l) where
   arbitrary :: Arbitrary l => Gen (WInstruction l)
