@@ -14,7 +14,7 @@ import GHC.Arr ((!))
 import Program (Program, ProgramState)
 import WSyntax (WBop (..), WCond (..), WInstruction (..), WVal)
 
-class Monad m => MonadIO m where
+class Monad m => MonadReadWrite m where
   readChar :: m Char
   writeString :: String -> m ()
 
@@ -33,7 +33,7 @@ data WError
   | HeapKeyNotFound
   | LabelFound
 
-runProgram :: forall m. (ProgramState WStore m, MonadIO m, MonadError WError m) => Program WInstruction -> m ()
+runProgram :: forall m. (ProgramState WStore m, MonadReadWrite m, MonadError WError m) => Program WInstruction -> m ()
 runProgram program = do
   (store, pc) <- get
   instr <- case program ^? ix pc of
@@ -123,19 +123,19 @@ runProgram program = do
       (store, pc) <- get
       put (store & valStack %~ (n :), pc)
 
-instance MonadIO IO where
+instance MonadReadWrite IO where
   readChar :: IO Char
   readChar = getChar
   writeString :: String -> IO ()
   writeString = putStrLn
 
-instance MonadIO m => MonadIO (ExceptT e m) where
+instance MonadReadWrite m => MonadReadWrite (ExceptT e m) where
   readChar :: ExceptT e m Char
   readChar = lift readChar
   writeString :: String -> ExceptT e m ()
   writeString = lift . writeString
 
-instance MonadIO m => MonadIO (StateT s (ExceptT e m)) where
+instance MonadReadWrite m => MonadReadWrite (StateT s (ExceptT e m)) where
   readChar :: StateT s (ExceptT e m) Char
   readChar = lift readChar
   writeString :: String -> StateT s (ExceptT e m) ()

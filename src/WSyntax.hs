@@ -67,4 +67,4 @@ instance Arbitrary l => Arbitrary (WInstruction l) where
     ]
 
   shrink :: WInstruction l -> [WInstruction l]
-  shrink v = [v]
+  shrink v = []

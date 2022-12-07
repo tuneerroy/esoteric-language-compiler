@@ -21,10 +21,10 @@ listToArray l = listArray (0, length l - 1) l
 mkProgram :: forall i l. (Ord l, Instruction i) => [i l] -> Maybe (Program i)
 mkProgram block = listToArray <$> traverse (relabel table) block'
   where
-    -- \| Evaluation of getLabels
+    -- Evaluation of getLabels
     (block', table) = evalState (getLabels block) 0
 
-    -- \| Removes all label instructions and builds a map from label to index
+    -- Removes all label instructions and builds a map from label to index
     getLabels :: [i l] -> State Int ([i l], Map l Int)
     getLabels [] = return ([], Map.empty)
     getLabels (x : xs) = do
@@ -38,7 +38,7 @@ mkProgram block = listToArray <$> traverse (relabel table) block'
           (block, labelLookup) <- getLabels xs
           return (block, Map.insert label count labelLookup)
 
-    -- \| Given a conversion from string label to index label, perform it
+    -- Given a conversion from string label to index label, perform it
     relabel :: Map l Int -> i l -> Maybe (i Int)
     relabel labelLookup = traverse (`Map.lookup` labelLookup)
 

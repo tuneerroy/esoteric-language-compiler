@@ -1,9 +1,9 @@
 import Test.HUnit
 import Test.QuickCheck
 
-import Lib
+import WParserTest qualified
 
 main :: IO ()
 main = do 
-    putStrLn someFunc
-    putStrLn "Test suite not yet implemented"
+    putStrLn "Running Parser Tests"
+    WParserTest.qc
