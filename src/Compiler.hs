@@ -1,6 +1,7 @@
 module Compiler where
-import WSyntax (WInstruction)
+
 import ASyntax (AInstruction)
+import WSyntax (WInstruction)
 
 compileCommand :: Eq a => WInstruction a -> [AInstruction String]
 compileCommand = undefined

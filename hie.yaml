@@ -6,4 +6,3 @@ cradle:
       component: "project-cis5520:lib"
     - path: ./app
       component: "project-cis5520:exe:project-cis5520-exe"
-

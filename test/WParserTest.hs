@@ -1,5 +1,7 @@
 module WParserTest where
 
+import Data.Foldable (Foldable (toList))
+import Data.List.NonEmpty (NonEmpty (..))
 import Parser (parse)
 import Test.HUnit hiding (Label)
 import Test.QuickCheck hiding (Discard)
@@ -9,8 +11,6 @@ import WSyntax
     WCond (..),
     WInstruction (..),
   )
-import Data.Foldable (Foldable(toList))
-import Data.List.NonEmpty(NonEmpty(..))
 
 instance Arbitrary Token where
   arbitrary :: Gen Token
@@ -78,7 +78,8 @@ newtype WProgramString = WP String deriving (Show)
 instance Arbitrary WLabel where
   arbitrary :: Gen WLabel
   arbitrary = WLabel <$> ((:|) <$> nonLF <*> listOf nonLF)
-    where nonLF :: Gen Token = oneof [return Tab, return Space]
+    where
+      nonLF :: Gen Token = oneof [return Tab, return Space]
 
   shrink :: WLabel -> [WLabel]
   shrink = const []

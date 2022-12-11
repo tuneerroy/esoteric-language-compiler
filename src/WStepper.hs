@@ -23,6 +23,7 @@ data WStore = WStore
     _callStack :: [WVal],
     _heap :: Map WVal WVal
   }
+
 makeLenses ''WStore
 
 data WError
