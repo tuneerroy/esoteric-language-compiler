@@ -142,6 +142,12 @@ instance MonadReadWrite m => MonadReadWrite (StateT s (ExceptT e m)) where
   writeString :: String -> StateT s (ExceptT e m) ()
   writeString = lift . writeString
 
+-- instance MonadReadWrite m => MonadReadWrite (StateT s (ExceptT e m)) where
+--   readChar :: StateT s (ExceptT e m) Char
+--   readChar = lift (lift readChar)
+--   writeString :: String -> StateT s (ExceptT e m) ()
+--   writeString = lift . (lift . writeString)
+
 type ProgramMonad = (StateT (WStore, Int) (ExceptT WError IO))
 
 exampleProgram :: Program WInstruction
