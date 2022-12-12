@@ -3,8 +3,17 @@ module WParserTest where
 import Data.Foldable (Foldable (toList))
 import Data.List.NonEmpty (NonEmpty (..))
 import Parser (parse)
-import Test.HUnit hiding (Label)
-import Test.QuickCheck hiding (Discard)
+import Program (mkProgram)
+import Test.HUnit ()
+import Test.QuickCheck
+  ( Arbitrary (..),
+    Gen,
+    elements,
+    listOf,
+    oneof,
+    quickCheck,
+    suchThat,
+  )
 import WParser (Token (..), WCommand, WLabel (..), wParseString, wParseTokens)
 import WSyntax
   ( WBop (..),
