@@ -11,7 +11,7 @@ import Control.Monad.Trans (MonadTrans (..))
 import Data.Map (Map)
 import Data.Map qualified as Map
 import GHC.Arr ((!))
-import Program (Program, ProgramState)
+import Program (Program, ProgramState, listToArray)
 import WSyntax (WBop (..), WCond (..), WInstruction (..), WVal)
 
 class Monad m => MonadReadWrite m where
@@ -151,7 +151,7 @@ instance MonadReadWrite m => MonadReadWrite (StateT s (ExceptT e m)) where
 type ProgramMonad = (StateT (WStore, Int) (ExceptT WError IO))
 
 exampleProgram :: Program WInstruction
-exampleProgram = undefined
+exampleProgram = listToArray [Push 5, Dup, Arith Add, End]
 
 performExampleProgram :: ProgramMonad ()
 performExampleProgram = runProgram exampleProgram

@@ -15,120 +15,135 @@ compileCommand :: (Eq a, NonWhitespaceShow a) => WInstruction a -> [String]
 compileCommand i = case i of
   InputChar ->
     [ "; input character",
-      "LDR r0, =charFormat",
-      "LDR r1, =inputRead",
-      "BL scanf",
-      "PUSH {r1}"
+      "ldr r0, =charFormat",
+      "ldr r1, =inputRead",
+      "bl scanf",
+      "sub sp, sp, #4",
+      "str r1, [sp]"
     ]
   InputNum ->
     [ "; input number",
-      "LDR r0, =numFormat",
-      "LDR r1, =inputRead",
-      "BL scanf",
-      "PUSH {r1}"
+      "ldr r0, =numFormat",
+      "ldr r1, =inputRead",
+      "bl scanf",
+      "sub sp, sp, #4",
+      "str r1, [sp]"
     ]
   OutputChar ->
     [ "; output character",
-      "MOV r0, sp",
-      "BL printf"
+      "mov r0, sp",
+      "bl printf"
     ]
   OutputNum ->
     [ "; output number",
-      "MOV r0, sp",
-      "BL printf"
+      "mov r0, sp",
+      "bl printf"
     ]
   Push n ->
     [ "; push",
-      "PUSH {" ++ show n ++ "}"
+      "mov r0, #" ++ show n,
+      "sub sp, sp, #4",
+      "str r0, [sp]"
     ]
   Dup ->
     [ "; dup",
-      "LDR r1, [sp]",
-      "SUB sp, sp, #4",
-      "STR r1, [sp]"
+      "ldr r1, [sp]",
+      "sub sp, sp, #4",
+      "str r1, [sp]"
     ]
   Swap ->
     [ "; swap",
-      "POP {r1, r2}",
-      "PUSH {r2, r1}"
+      "ldr r0, [sp]",
+      "add, sp, sp, #4",
+      "ldr r1, [sp]",
+      "str r0, [sp]",
+      "sub sp, sp, #4",
+      "ldr r0, [sp]"
     ]
   Discard ->
     [ "; discard",
-      "ADD sp, sp, #4"
+      "add sp, sp, #4"
     ]
   Copy n ->
     -- assumed top down nth
     [ "; copy",
-      "MOVE r1 #" ++ show (n * 4), -- offset
-      "LDR r2, [sp, r1]",
-      "PUSH {r2}"
+      "move r1 #" ++ show (n * 4), -- offset
+      "ldr r2, [sp, r1]",
+      "sub sp, sp, #4",
+      "str r2, [sp]"
     ]
   Slide n ->
     [ "; slide",
-      "ADD sp, sp, #" ++ show (n * 4)
+      "add sp, sp, #" ++ show (n * 4)
     ]
   Arith Add ->
     [ "; add arith",
-      "POP {r1, r2}",
-      "ADD r3, r1, r2",
+      "ldr r0, [sp]",
+      "add, sp, sp, #4",
+      "ldr r1, [sp]",
+      "add r1, r1, r0",
+      "str r1, [sp]"
       -- not sure if these are for signed/unsigned operationz
-      "PUSH {r3}"
     ]
   Arith Sub ->
     [ "; sub arith",
-      "POP {r1, r2}",
-      "SUB r3, r1, r2",
+      "ldr r0, [sp]",
+      "add, sp, sp, #4",
+      "ldr r1, [sp]",
+      "sub r1, r1, r0",
+      "str r1, [sp]"
       -- not sure if these are for signed/unsigned operationz
-      "PUSH {r3}"
     ]
   Arith wb ->
-    -- IDK HOW TO DO THIS, HALPPPPPPPPPPPPPP x10 S.O.S.
     [ -- TODO: handle division & mod, -- ask Joe
       "; arith",
-      "PUSH {r3}"
+      "sub sp, sp, #4"
     ]
   Label a ->
     [ "; label",
-      toString a
+      toString a ++ ":"
     ]
   Call a ->
     [ "; call",
-      "BL " ++ toString a
+      "bl " ++ toString a
     ]
   Branch Any a ->
     [ "; branch",
-      "B " ++ toString a
+      "b " ++ toString a
     ]
   Branch Zero a ->
     [ "; branch",
-      "CMP r1, #0",
-      "BEQ " ++ toString a
+      "cmp r1, #0",
+      "beq " ++ toString a
     ]
   Branch Neg a ->
     [ "; branch",
-      "CMP r1, #0",
-      "BLT " ++ toString a
+      "cmp r1, #0",
+      "blt " ++ toString a
     ]
   Return ->
     [ "; return",
-      "BX lr"
+      "bx lr"
     ]
   End ->
     [ "; end",
-      "B end"
+      "b end"
     ]
   -- TODO: should this be replacing the memory values?
   Store ->
     [ "; store",
-      "POP {r1, r2}", -- yes, I'm lazy
-      "PUSH {r1, r2}",
-      "STR r2, [r1]"
+      "mov r3, #0",
+      "ldr r1, [sp, r3]",
+      "mov r3, #4",
+      "ldr r0, [sp, r3]",
+      "str r1, [sp]"
     ]
   Retrieve ->
     [ "; retrieve",
-      "POP {r1, r2}", -- yes, I'm lazy
-      "PUSH {r1, r2}",
-      "LDR r2, [r1]"
+      "ldr r0, [sp]",
+      "ldr r0, [r0]",
+      "sub sp, sp, #4",
+      "str r0, [sp]"
     ]
 
 ioPrep :: [String]
@@ -136,16 +151,19 @@ ioPrep =
   [ ".global printf",
     ".global scanf",
     ".data",
-    ".balign 4",
+    ".align 2",
     "inputRead: .word 0",
-    ".balign 4",
+    ".align 2",
     "numFormat: .asciz \"%d\"",
-    ".balign 4",
-    "charFormat: .asciz \"%c\""
+    ".align 2",
+    "charFormat: .asciz \"%c\"",
+    ".global _start",
+    ".align 2",
+    "_start:"
   ]
 
 compileProgram :: (Eq a, NonWhitespaceShow a) => [WInstruction a] -> [String]
-compileProgram a = ioPrep ++ concatMap compileCommand a ++ ["end"]
+compileProgram a = ioPrep ++ concatMap compileCommand a ++ ["end:"]
 
 class NonWhitespaceShow a where
   toString :: a -> String
@@ -167,33 +185,33 @@ compileTest =
           ~?= ["TODO: placeholder", "end"],
         compileProgram stackProgram
           ~?= [ "; push",
-                "PUSH {5}",
+                "push {5}",
                 "; dup",
-                "LDR r1, [sp]",
-                "SUB sp, sp, #4",
-                "STR r1, [sp]",
+                "ldr r1, [sp]",
+                "sub sp, sp, #4",
+                "str r1, [sp]",
                 "; swap",
-                "POP {r1, r2}",
-                "PUSH {r2, r1}",
+                "pop {r1, r2}",
+                "push {r2, r1}",
                 "; discard",
-                "ADD sp, sp #4",
+                "add sp, sp #4",
                 "; copy",
-                "MOVE r1 #8",
-                "LDR r2, [sp, r1]",
-                "PUSH {r2}",
+                "move r1 #8",
+                "ldr r2, [sp, r1]",
+                "push {r2}",
                 "; slide",
-                "ADD sp, sp, #8",
+                "add sp, sp, #8",
                 "end"
               ],
         compileProgram arithProgram
           ~?= [ "; add arith",
-                "POP {r1, r2}",
-                "ADD r3, r1, r2",
-                "PUSH {r3}",
+                "pop {r1, r2}",
+                "add r3, r1, r2",
+                "push {r3}",
                 "; sub arith",
-                "POP {r1, r2}",
-                "SUB r3, r1, r2",
-                "PUSH {r3}",
+                "pop {r1, r2}",
+                "sub r3, r1, r2",
+                "push {r3}",
                 "TODO: undefined Mul", -- TODO
                 "TODO: undefined Div", -- TODO
                 "TODO: undefined Mod", -- TODO
@@ -202,7 +220,7 @@ compileTest =
       ]
 
 ioProgram :: [WInstruction WLabel]
-ioProgram = undefined
+ioProgram = [InputChar, InputNum, OutputChar, OutputNum]
 
 stackProgram :: [WInstruction WLabel]
 stackProgram = [Push 5, Dup, Swap, Discard, Copy 2, Slide 2]
