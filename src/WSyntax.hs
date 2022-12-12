@@ -1,6 +1,6 @@
 module WSyntax (WBop (..), WCond (..), WVal, WInstruction (..)) where
 
-import Program (Instruction (..))
+-- import Program (Instruction (..))
 import Test.QuickCheck (Arbitrary (arbitrary, shrink), Gen)
 import Test.QuickCheck.Gen (elements, oneof)
 
