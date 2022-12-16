@@ -14,10 +14,24 @@ import WSyntax
 compileCommand :: (Eq a, NonWhitespaceShow a) => WInstruction a -> [String]
 compileCommand i = case i of
   InputChar ->
-    [ "TODO"
+    [ "// inputChar",
+      "mov x0, #1              // fd = stdin",
+      "adrp x1, buf@page",
+      "add x1, x1, buf@pageoff // x1 is address of buf",
+      "mov x26, x1",
+      "mov x2, #2              // count = 2 (so it can read the \n)",
+      "mov x16, #3             // unix read system call",
+      "svc #0x80               // call kernel",
+      "// now buf contains the value read in by the system call",
+      "ldr x0, [x26]           // x0 = value read in",
+      "ldr x1, [sp], #16       // push address from top of stack",
+      "adrp x2, heap@page",
+      "add x2, x2, heap@pageoff // x2 is address of heap",
+      "str x0, [x2, x1]"
     ]
   InputNum ->
-    [ "TODO"
+    [ "// inputNum",
+      "bl _input_num"
     ]
   OutputChar ->
     [ "// outputChar",
@@ -31,44 +45,8 @@ compileCommand i = case i of
       "svc #0x80"
     ]
   OutputNum ->
-    -- TODO fix labels
     [ "// outputNum",
-      "ldr x0, [sp]",
-      "_int_to_ascii1:",
-      "cmp x0, #0",
-      "b.ge _int_to_ascii_pos1",
-      "mov x1, #45 // ascii for '-'",
-      "str x1, [sp, #-16]!",
-      "mov x27, x0",
-      "bl _ouput_char",
-      "ldr x28, [sp], #16",
-      "mov x0, x27",
-      "mov x27, #0",
-      "negs x0, x0",
-      "_int_to_ascii_pos1:",
-      "// expects x0 = int",
-      "cmp x0, #10",
-      "b.lt _int_to_ascii_br1",
-      "mov x1, #10             // if x0 >= 10",
-      "bl _divide",
-      "mov x0, x2",
-      "add x3, x3, #48",
-      "str x3, [sp, #-16]!",
-      "add x27, x27, #1",
-      "bl _int_to_ascii_pos1",
-      "_int_to_ascii_br1:      // if x0 < 10",
-      "add x8, x0, #48         // add ascii representation of x0 to stack",
-      "str x8, [sp, #-16]!",
-      "add x27, x27, #1",
-      "// print the stack x27 times",
-      "_print_stack1:",
-      "cmp x27, #0             // if x27 <= 0",
-      "b.le _done_ascii1",
-      "bl _ouput_char          // print top of stack",
-      "ldr x28, [sp], #16",
-      "sub x27, x27, #1",
-      "bl _print_stack1",
-      "_done_ascii1:"
+      "bl _output_num"
     ]
   Push n ->
     [ "// push",
@@ -94,22 +72,13 @@ compileCommand i = case i of
     ]
   Copy n ->
     [ "// copy",
-      "ldr x0, [sp, #" ++ show ((n - 1) * 16) ++ "]", -- offset
+      "ldr x0, [sp, #" ++ show ((n - 1) * 16) ++ "]",
       "str x0, [sp, #-16]!"
     ]
   Slide n ->
-    -- TODO fix labels
     [ "// slide",
       "mov x0, #" ++ show n,
-      "ldr x1, [sp], #16",
-      "slide_loop1:",
-      "cmp x0, #0",
-      "b.le slide1",
-      "ldr x28, [sp], #16",
-      "sub x0, x0, #1",
-      "bl slide_loop1",
-      "slide1:",
-      "tr x1, [sp, #-16]!"
+      "bl _slide"
     ]
   Arith Add ->
     [ "// add arith",
@@ -117,7 +86,6 @@ compileCommand i = case i of
       "ldr x1, [sp], #16",
       "add x2, x0, x1",
       "str x2, [sp, #-16]!"
-      -- not sure if these are for signed/unsigned operationz
     ]
   Arith Sub ->
     [ "// sub arith",
@@ -156,56 +124,61 @@ compileCommand i = case i of
       "bl " ++ toString a
     ]
   Branch Any a ->
-    [ "; branch",
+    [ "// branch",
       "b " ++ toString a
     ]
   Branch Zero a ->
-    [ "; branch",
-      "cmp r1, #0",
+    [ "// branch zero",
+      "ldr x0, [sp]",
+      "cmp x0, #0",
       "beq " ++ toString a
     ]
   Branch Neg a ->
-    [ "; branch",
-      "cmp r1, #0",
+    [ "// branch neg",
+      "ldr x0, [sp]",
+      "cmp x0, #0",
       "blt " ++ toString a
     ]
   Return ->
-    [ "; return",
-      "bx lr"
+    [ "// return",
+      "ret"
     ]
   End ->
-    [ "; end",
+    [ "// end",
       "b end"
     ]
-  -- TODO: should this be replacing the memory values?
   Store ->
-    [ "; store",
-      "mov r3, #0",
-      "ldr r1, [sp, r3]",
-      "mov r3, #4",
-      "ldr r0, [sp, r3]",
-      "str r1, [sp]"
+    [ "// store",
+      "ldr x0, [sp], #16 // value",
+      "ldr x1, [sp], #16 // address",
+      "adrp x2, heap@page",
+      "add x2, x2, heap@pageoff",
+      "str x0, [x2, x1]"
     ]
   Retrieve ->
-    [ "; retrieve",
-      "ldr r0, [sp]",
-      "ldr r0, [r0]",
-      "sub sp, sp, #4",
-      "str r0, [sp]"
+    [ "// retrieve",
+      "ldr x1, [sp], #16 // address",
+      "adrp x2, heap@page",
+      "add x2, x2, heap@pageoff",
+      "ldr x0, [x2, x1]",
+      "str x0, [sp, #-16]!"
     ]
 
 ioPrep :: [String]
 ioPrep =
   [ ".data",
+    ".balign 4",
     "buf: .ds 4 // memory buffer for IO",
+    ".balign 4",
+    "heap: .space 1000000, 0",
     ".text",
     ".global _start",
-    ".align 2",
+    ".align 4",
     "_divide:",
     "udiv x2, x0, x1",
     "msub x3, x2, x1, x0",
     "ret",
-    "_ouput_char:",
+    "_output_char:",
     "mov x0, #1",
     "adrp x1, buf@page",
     "add x1, x1, buf@pageoff",
@@ -214,6 +187,102 @@ ioPrep =
     "mov x2, #1",
     "mov x16, #4",
     "svc #0x80",
+    "ret",
+    "_output_num:",
+    "ldr x0, [sp]",
+    "str x30, [sp, #-16]! // push x30 onto stack",
+    "_int_to_ascii:",
+    "cmp x0, #0",
+    "b.ge _int_to_ascii_pos",
+    "mov x1, #45 // ascii for '-'",
+    "str x1, [sp, #-16]!",
+    "mov x27, x0",
+    "bl _output_char",
+    "ldr x28, [sp], #16",
+    "mov x0, x27",
+    "mov x27, #0",
+    "negs x0, x0",
+    "_int_to_ascii_pos:",
+    "// expects x0 = int",
+    "cmp x0, #10",
+    "b.lt _int_to_ascii_br",
+    "mov x1, #10             // if x0 >= 10",
+    "bl _divide",
+    "mov x0, x2",
+    "add x3, x3, #48",
+    "str x3, [sp, #-16]!",
+    "add x27, x27, #1",
+    "bl _int_to_ascii_pos",
+    "_int_to_ascii_br:      // if x0 < 10",
+    "add x8, x0, #48         // add ascii representation of x0 to stack",
+    "str x8, [sp, #-16]!",
+    "add x27, x27, #1",
+    "// print the stack x27 times",
+    "_print_stack:",
+    "cmp x27, #0             // if x27 <= 0",
+    "b.le _done_ascii",
+    "bl _output_char          // print top of stack",
+    "ldr x28, [sp], #16",
+    "sub x27, x27, #1",
+    "bl _print_stack",
+    "_done_ascii:",
+    "ldr x30, [sp], #16 // load linked address back to x30",
+    "ret",
+    "_slide:",
+    "// expects x0 = number of things to slide off",
+    "ldr x1, [sp], #16",
+    "mov x29, x30",
+    "slide_loop:",
+    "cmp x0, #0",
+    "b.le slide",
+    "ldr x28, [sp], #16",
+    "sub x0, x0, #1",
+    "bl slide_loop",
+    "slide:",
+    "str x1, [sp, #-16]!",
+    "mov x30, x29",
+    "ret",
+    "_input_num:",
+    "mov x22, x30            // store address",
+    "mov x0, #0              // fd = stdin",
+    "adrp x26, buf@page",
+    "add x26, x26, buf@pageoff // x26 is address of buf",
+    "mov x1, x26",
+    "mov x2, #11             // count = 11 (since max int is 2147483647)",
+    "mov x16, #3             // unix read system call",
+    "svc #0x80               // call kernel",
+    "// now buf contains the value read in by the system call",
+    "// now x0 contains how many bytes were read (including the \n)",
+    "sub x0, x0, #1",
+    "mov x25, x0             // x25 = num bytes read",
+    "mov x24, x0             // x24 = num bytes read",
+    "mov x23, #0             // x23 = where the number will be stored",
+    "ldrb w1, [x26, x25]     // w1 = last character read",
+    "cmp x1, #10             // check if x1 = '\n'",
+    "bne _no_nl",
+    "sub x25, x25, #1        // ignore the '\n' if it appears",
+    "_no_nl:",
+    "cmp x25, #0",
+    "blt _calculate_number   // number is on stack, we now need to calculate it",
+    "ldrb w0, [x26, x25]",
+    "sub x0, x0, #48        // convert ascii",
+    "str x0, [sp, #-16]!",
+    "sub x25, x25, #1 ",
+    "bl _no_nl",
+    "_calculate_number:",
+    "cmp x24, #0",
+    "beq _done_calculation",
+    "ldr x0, [sp], #16       // push top of stack to x0",
+    "mov x1, #10",
+    "madd x23, x23, x1, x0",
+    "sub x24, x24, #1",
+    "bl _calculate_number",
+    "_done_calculation:",
+    "ldr x1, [sp], #16       // push address from top of stack",
+    "adrp x2, heap@page",
+    "add x2, x2, heap@pageoff",
+    "str x23, [x2, x1]       // store number in location given by top of the stack",
+    "mov x30, x22",
     "ret",
     "_start:"
   ]
