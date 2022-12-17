@@ -287,8 +287,16 @@ ioPrep =
     "_start:"
   ]
 
+endPrep :: [String]
+endPrep =
+  [ "end:",
+    "mov x0, #0",
+    "mov x16, #1",
+    "svc #0x80"
+  ]
+
 compileProgram :: (Eq a, NonWhitespaceShow a) => [WInstruction a] -> [String]
-compileProgram a = ioPrep ++ concatMap compileCommand a ++ ["end:", "mov x0, #0", "mov x16, #1", "svc #0x80"]
+compileProgram a = ioPrep ++ concatMap compileCommand a ++ endPrep
 
 class NonWhitespaceShow a where
   toString :: a -> String
