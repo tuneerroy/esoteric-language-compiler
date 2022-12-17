@@ -8,6 +8,7 @@ s = shell "bash script.sh"
 
 -- >>> createProcess s
 
+
 tHelloWorld :: Test
 tHelloWorld =
   "hello world" ~: test2
@@ -32,4 +33,4 @@ temp = readFile "out.txt"
 -- "Hola, mundo\n"
 
 -- >>> runTestTT tHelloWorld
--- Variable not in scope: runTestTT :: Test -> t
+-- Counts {cases = 1, tried = 1, errors = 0, failures = 0}
