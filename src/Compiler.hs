@@ -168,12 +168,12 @@ ioPrep :: [String]
 ioPrep =
   [ ".data",
     ".balign 4",
-    "buf: .ds 4 // memory buffer for IO",
+    "buf: .ds 4 // memory buffer for IO", -- buf: .space 20, 0
     ".balign 4",
     "heap: .space 1000000, 0",
     ".text",
     ".global _start",
-    ".align 4",
+    ".align 4", -- .balign 16
     "_divide:",
     "udiv x2, x0, x1",
     "msub x3, x2, x1, x0",
