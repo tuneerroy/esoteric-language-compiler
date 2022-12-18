@@ -6,6 +6,9 @@ import Test.QuickCheck.Gen (elements, oneof)
 
 data WBop = Add | Sub | Mul | Div | Mod deriving (Eq, Show)
 
+instance Arbitrary WBop where
+  arbitrary = elements [Add, Sub, Mul, Div, Mod]
+
 data WCond = Any | Zero | Neg deriving (Eq, Show)
 
 -- In the offical implementation, stack values are Integer
@@ -56,7 +59,7 @@ instance Arbitrary l => Arbitrary (WInstruction l) where
         pure Discard,
         Copy <$> arbitrary,
         Slide <$> arbitrary,
-        Arith <$> elements [Add, Sub, Mul, Div, Mod],
+        Arith <$> arbitrary,
         Label <$> arbitrary,
         Call <$> arbitrary,
         Branch <$> elements [Any, Zero, Neg] <*> arbitrary,
