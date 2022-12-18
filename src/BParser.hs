@@ -39,7 +39,7 @@ tokenize = mapMaybe parseToken
 constPTok :: Token -> a -> BParser a
 constPTok t = (token t $>)
 
-commandB :: BParser BInstruction
+commandB :: BParser (BInstruction ())
 commandB =
   asum $
     uncurry constPTok
@@ -49,12 +49,12 @@ commandB =
             (Minus, DecrByte),
             (Period, Output),
             (Comma, Input),
-            (LBracket, WhileStart),
-            (RBracket, WhileEnd)
+            (LBracket, WhileStart ()),
+            (RBracket, WhileEnd ())
           ]
 
-blockB :: BParser [BInstruction]
+blockB :: BParser [BInstruction ()]
 blockB = many commandB
 
-bParseString :: String -> Maybe [BInstruction]
+bParseString :: String -> Maybe [BInstruction ()]
 bParseString = parse blockB . tokenize
