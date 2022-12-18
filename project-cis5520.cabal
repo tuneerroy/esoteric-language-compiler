@@ -90,6 +90,7 @@ library
   exposed-modules:
       Parser,
       Program,
+      NonNeg,
       WSyntax,
       WParser,
       WStepper,

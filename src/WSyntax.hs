@@ -1,8 +1,9 @@
-module WSyntax (WBop (..), WCond (..), WVal, WInstruction (..)) where
+module WSyntax (WBop (..), WCond (..), WInstruction (..)) where
 
 -- import Program (Instruction (..))
 import Test.QuickCheck (Arbitrary (arbitrary, shrink), Gen)
 import Test.QuickCheck.Gen (elements, oneof)
+import NonNeg (NonNeg)
 
 data WBop = Add | Sub | Mul | Div | Mod deriving (Eq, Show)
 
@@ -13,7 +14,6 @@ data WCond = Any | Zero | Neg deriving (Eq, Show)
 
 -- In the offical implementation, stack values are Integer
 -- But that would be a pain to convert assembly to
-type WVal = Int
 
 data WInstruction l
   = -- IO
@@ -22,12 +22,12 @@ data WInstruction l
   | OutputChar
   | OutputNum
   | -- Stack
-    Push WVal
+    Push Int
   | Dup
   | Swap
   | Discard
-  | Copy WVal
-  | Slide WVal
+  | Copy NonNeg
+  | Slide NonNeg
   | -- Arithmetic
     Arith WBop
   | -- Flow Control
