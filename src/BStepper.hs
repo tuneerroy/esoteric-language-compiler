@@ -1,18 +1,21 @@
 {-# LANGUAGE TemplateHaskell #-}
 
-module WStepper where
+module BStepper where
 
-import BSyntax
+import BSyntax (BInstruction (..))
 import Control.Lens (Ixed (ix), makeLenses, (%~), (&), (.~), (^.), (^?))
 import Control.Monad (forM_, unless, void, when)
 import Control.Monad.Except (ExceptT, MonadError (..), runExceptT)
 import Control.Monad.State (MonadState (get, put), StateT (runStateT))
 import Control.Monad.State.Lazy (StateT, modify)
 import Control.Monad.Trans (MonadTrans (..))
+import Data.Char (chr)
 import Data.Map (Map)
 import Data.Map qualified as Map
+import Data.Maybe (fromMaybe)
 import Data.Word (Word8)
-import GHC.Arr (Ix (range), (!))
+import GHC.Arr (bounds)
+import Program (Program, ProgramState)
 
 class Monad m => MonadReadWrite m where
   readChar :: m Char
@@ -26,113 +29,43 @@ data BStore = BStore
 makeLenses ''BStore
 
 initStore :: BStore
-initStore = BStore [] [] Map.empty
+initStore = BStore 0 Map.empty
 
-data WError
-  = ProgramOutOfBounds
-  | ValStackEmpty
-  | CallStackEmpty
-  | StackOutOfBounds
-  | HeapKeyNotFound
-  | LabelFound
+data BError = MissingMatchingBracket | ProgramOutOfBounds
 
-runProgram :: forall m. (ProgramState BStore m, MonadReadWrite m, MonadError WError m) => Program BInstruction -> m ()
+-- TODO: maybe extract runProgram out? everything dealing with program counter
+
+runProgram :: forall m. (ProgramState BStore m, MonadReadWrite m, MonadError BError m) => Program BInstruction -> m ()
 runProgram program = do
   (store, pc) <- get
   instr <- case program ^? ix pc of
     Nothing -> throwError ProgramOutOfBounds
     Just wi -> return wi
-  case instr of {}
-  -- IncrPtr -> undefined
-  -- DecrPtr -> undefined
-  -- IncrByte -> undefined
-  -- DecrByte -> undefined
-  -- Output -> undefined
-  -- Input -> undefined
-  -- WhileStart -> undefined
-  -- WhileEnd -> undefined
-  -- InputChar -> do
-  --   v <- fromEnum <$> readChar
-  --   push v
-  -- InputNum -> do
-  --   v <- read . pure <$> readChar
-  --   push v
-  -- OutputChar -> do
-  --   n <- pop
-  --   writeString [toEnum n]
-  -- OutputNum -> do
-  --   n <- pop
-  --   writeString [toEnum n]
-  -- Push n -> push n
-  -- Dup -> do
-  --   n <- pop
-  --   push n
-  --   push n
-  -- Swap -> do
-  --   n <- pop
-  --   m <- pop
-  --   push m
-  --   push n
-  -- Discard -> void pop
-  -- Copy i -> do
-  --   n <- case store ^. valStack ^? ix i of
-  --     Nothing -> throwError StackOutOfBounds
-  --     Just n -> pure n
-  --   push n
-  -- Slide n -> do
-  --   top <- pop
-  --   forM_ [0 .. n] $ const pop
-  --   push top
-  -- Arith wb -> do
-  --   b <- pop
-  --   a <- pop
-  --   let op = case wb of
-  --         Add -> (+)
-  --         Sub -> (-)
-  --         Mul -> (*)
-  --         Div -> div
-  --         Mod -> mod
-  --   push $ op a b
-  -- Label n -> throwError LabelFound
-  -- Call n -> put (store & callStack %~ (pc :), n)
-  -- Branch wc n -> do
-  --   top <- pop
-  --   let jump = case wc of
-  --         Any -> True
-  --         Zero -> top == 0
-  --         Neg -> top < 0
-  --   when jump $ put (store, n - 1)
-  -- Return -> do
-  --   case store ^. callStack of
-  --     [] -> throwError CallStackEmpty
-  --     n : ns -> put (store & callStack .~ ns, n)
-  -- End -> return ()
-  -- Store -> do
-  --   val <- pop
-  --   addr <- pop
-  --   put (store & heap %~ Map.insert addr val, pc)
-  -- Retrieve -> do
-  --   addr <- pop
-  --   case store ^. heap & Map.lookup addr of
-  --     Nothing -> throwError HeapKeyNotFound
-  --     Just n -> push n
-  unless (instr == End) $ do
-    put (store, pc + 1)
+  case instr of
+    IncrPtr -> do
+      put (store & ptr %~ (+) 1, pc)
+    DecrPtr -> do
+      put (store & ptr %~ (-) 1, pc)
+    IncrByte -> do
+      put (store & heap %~ Map.alter (adjustByte $ (+) 1) (_ptr store), pc)
+    DecrByte -> do
+      put (store & heap %~ Map.alter (adjustByte $ (-) 1) (_ptr store), pc)
+    Output ->
+      let v = Map.findWithDefault 0 (_ptr store) (_heap store)
+       in writeString [fromEnum v & chr]
+    Input -> do
+      v <- readChar
+      put (store & heap %~ Map.insert (_ptr store) (fromEnum v & toEnum), pc)
+    WhileStart v -> case Map.findWithDefault 0 (_ptr store) (_heap store) of
+      0 -> put (store, v)
+      _ -> put (store, pc)
+    WhileEnd v -> put (store, v)
+  put (store, pc + 1)
+  unless (pc == snd (bounds program)) $ do
     runProgram program
   where
-    pop :: m Int
-    pop = do
-      (store, pc) <- get
-      case store ^. valStack of
-        [] -> throwError ValStackEmpty
-        n : ns -> do
-          put (store & valStack .~ ns, pc)
-          return n
-
-    push :: Int -> m ()
-    push n = do
-      (store, pc) <- get
-      put (store & valStack %~ (n :), pc)
+    adjustByte :: (Word8 -> Word8) -> Maybe Word8 -> Maybe Word8
+    adjustByte f x = Just $ fromMaybe 0 x & f
 
 -- TODO: gotta move this stuff to a separate file later
 -- too much repetitive code
@@ -155,6 +88,6 @@ instance MonadReadWrite m => MonadReadWrite (StateT s (ExceptT e m)) where
   writeString :: String -> StateT s (ExceptT e m) ()
   writeString = lift . writeString
 
-type ProgramMonad = (StateT (BStore, Int) (ExceptT WError IO))
+type ProgramMonad = StateT (BStore, Int) (ExceptT BError IO)
 
-x = runExceptT $ runStateT performExampleProgram (initStore, 0)
+-- x = runExceptT $ runStateT performExampleProgram (initStore, 0)
