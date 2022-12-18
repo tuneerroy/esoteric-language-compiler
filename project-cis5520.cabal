@@ -94,7 +94,8 @@ library
       WParser,
       WStepper,
       ASyntax,
-      Compiler
+      Compiler,
+      WCompiler
       
   hs-source-dirs:
       src
