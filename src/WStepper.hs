@@ -5,7 +5,12 @@ module WStepper where
 import Control.Lens (Ixed (ix), makeLenses, (%~), (&), (.~), (^.), (^?))
 import Control.Monad (forM_, unless, void, when)
 import Control.Monad.Except (ExceptT, MonadError (..), runExceptT)
-import Control.Monad.State (MonadState (get, put), StateT (runStateT))
+import Control.Monad.State
+  ( MonadState (get, put),
+    StateT (runStateT),
+    evalStateT,
+    execStateT,
+  )
 import Control.Monad.State.Lazy (StateT, modify)
 import Control.Monad.Trans (MonadTrans (..))
 import Data.Map (Map)
@@ -29,6 +34,9 @@ makeLenses ''WStore
 initStore :: WStore
 initStore = WStore [] [] Map.empty
 
+initState :: (WStore, Int)
+initState = (initStore, 0)
+
 data WError
   = ProgramOutOfBounds
   | ValStackEmpty
@@ -36,9 +44,10 @@ data WError
   | StackOutOfBounds
   | HeapKeyNotFound
   | LabelFound
+  deriving (Show)
 
-runProgram :: forall m. (ProgramState WStore m, MonadReadWrite m, MonadError WError m) => Program WInstruction -> m ()
-runProgram program = do
+toProgramState :: forall m. (ProgramState WStore m, MonadReadWrite m, MonadError WError m) => Program WInstruction -> m ()
+toProgramState program = do
   (store, pc) <- get
   instr <- case program ^? ix pc of
     Nothing -> throwError ProgramOutOfBounds
@@ -55,7 +64,7 @@ runProgram program = do
       writeString [toEnum n]
     OutputNum -> do
       n <- pop
-      writeString [toEnum n]
+      writeString $ show n
     Push n -> push n
     Dup -> do
       n <- pop
@@ -110,8 +119,9 @@ runProgram program = do
         Nothing -> throwError HeapKeyNotFound
         Just n -> push n
   unless (instr == End) $ do
+    (store, pc) <- get
     put (store, pc + 1)
-    runProgram program
+    toProgramState program
   where
     pop :: m Int
     pop = do
@@ -139,24 +149,20 @@ instance MonadReadWrite m => MonadReadWrite (ExceptT e m) where
   writeString :: String -> ExceptT e m ()
   writeString = lift . writeString
 
-instance MonadReadWrite m => MonadReadWrite (StateT s (ExceptT e m)) where
-  readChar :: StateT s (ExceptT e m) Char
+instance MonadReadWrite m => MonadReadWrite (StateT s m) where
+  readChar :: StateT s m Char
   readChar = lift readChar
-  writeString :: String -> StateT s (ExceptT e m) ()
+  writeString :: String -> StateT s m ()
   writeString = lift . writeString
 
--- instance MonadReadWrite m => MonadReadWrite (StateT s (ExceptT e m)) where
---   readChar :: StateT s (ExceptT e m) Char
---   readChar = lift (lift readChar)
---   writeString :: String -> StateT s (ExceptT e m) ()
---   writeString = lift . (lift . writeString)
+runProgram :: MonadReadWrite m => Program WInstruction -> m (Either WError ())
+runProgram program = do
+  let programState = toProgramState program
+  runExceptT $ evalStateT programState initState
 
-type ProgramMonad = (StateT (WStore, Int) (ExceptT WError IO))
-
-exampleProgram :: Program WInstruction
-exampleProgram = listToArray [Push 5, Dup, Arith Add, OutputChar, End]
-
-performExampleProgram :: ProgramMonad ()
-performExampleProgram = runProgram exampleProgram
-
-x = runExceptT $ runStateT performExampleProgram (initStore, 0)
+runProgramIO :: Program WInstruction -> IO ()
+runProgramIO program = do
+  possibleError <- runProgram program
+  case possibleError of
+    Left err -> error $ show err
+    Right () -> return ()
