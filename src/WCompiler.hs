@@ -220,6 +220,7 @@ header =
     Mov (Reg 30) (Reg 29),
     Ret,
     ALabel "_input_num",
+    MovI (Reg 21) 1, -- ADDITION
     Mov (Reg 22) (Reg 30),
     MovI (Reg 0) 0,
     GetAddress (Reg 26) "buf",
@@ -227,6 +228,16 @@ header =
     MovI (Reg 2) 11,
     MovI (Reg 16) 3,
     Svc,
+    -- ADDITION
+    MovI (Reg 6) 0,
+    Ldrb (Reg32 5) (Reg 26) (Reg 6),
+    Cmp (Reg 5) 45,
+    B NE "_nonneg",
+    AAddI (Reg 26) (Reg 26) 1,
+    ASubI (Reg 0) (Reg 0) 1,
+    MovI (Reg 21) (-1),
+    ALabel "_nonneg",
+    -- ADDITION ENDS
     ASubI (Reg 0) (Reg 0) 1,
     Mov (Reg 25) (Reg 0),
     Mov (Reg 24) (Reg 0),
@@ -252,6 +263,7 @@ header =
     ASubI (Reg 24) (Reg 24) 1,
     Bl "_calculate_number",
     ALabel "_done_calculation",
+    AMul (Reg 23) (Reg 23) (Reg 21), -- ADDITION
     Ldr (Reg 1) SP 16,
     GetAddress (Reg 2) "heap",
     StrO (Reg 23) (Reg 2) (Reg 1),
