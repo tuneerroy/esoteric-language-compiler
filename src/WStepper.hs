@@ -4,13 +4,13 @@ module WStepper where
 
 import Control.Lens (Ixed (ix), makeLenses, (%~), (&), (.~), (^.), (^?))
 import Control.Monad (forM_, unless, void, when)
-import Control.Monad.Except (ExceptT, MonadError (..))
-import Control.Monad.State (MonadState (get, put))
+import Control.Monad.Except (ExceptT, MonadError (..), runExceptT)
+import Control.Monad.State (MonadState (get, put), StateT (runStateT))
 import Control.Monad.State.Lazy (StateT, modify)
 import Control.Monad.Trans (MonadTrans (..))
 import Data.Map (Map)
 import Data.Map qualified as Map
-import GHC.Arr ((!))
+import GHC.Arr (Ix (range), (!))
 import Program (Program, ProgramState, listToArray)
 import WSyntax (WBop (..), WCond (..), WInstruction (..), WVal)
 
@@ -25,6 +25,9 @@ data WStore = WStore
   }
 
 makeLenses ''WStore
+
+initStore :: WStore
+initStore = WStore [] [] Map.empty
 
 data WError
   = ProgramOutOfBounds
@@ -151,7 +154,9 @@ instance MonadReadWrite m => MonadReadWrite (StateT s (ExceptT e m)) where
 type ProgramMonad = (StateT (WStore, Int) (ExceptT WError IO))
 
 exampleProgram :: Program WInstruction
-exampleProgram = listToArray [Push 5, Dup, Arith Add, End]
+exampleProgram = listToArray [Push 5, Dup, Arith Add, OutputChar, End]
 
 performExampleProgram :: ProgramMonad ()
 performExampleProgram = runProgram exampleProgram
+
+x = runExceptT $ runStateT performExampleProgram (initStore, 0)
