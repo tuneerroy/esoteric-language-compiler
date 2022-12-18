@@ -93,7 +93,8 @@ library
       WSyntax,
       WParser,
       ASyntax,
-      Compiler
+      Compiler,
+      WCompiler
       
   hs-source-dirs:
       src

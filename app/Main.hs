@@ -1,10 +1,12 @@
 module Main where
 
-import Compiler (compileProgram)
+import ASyntax (toArm64String)
+-- import Compiler (compileProgram)
 import Control.Monad (void, when)
 import Data.List (intercalate)
 import Data.Maybe (fromMaybe)
 import Text.Read (readMaybe)
+import WCompiler (compileProgram)
 import WParser (wParseString)
 
 main :: IO ()
@@ -30,7 +32,14 @@ tryOFileConversion (c : ".ws") = Just $ c : ".s"
 tryOFileConversion (c : cs) = tryOFileConversion cs >>= (\cs' -> return (c : cs'))
 tryOFileConversion _ = Nothing
 
+-- compile :: String -> Maybe String
+-- compile s = do
+--   commands <- wParseString s
+--   return (intercalate "\n" $ compileProgram commands)
+
 compile :: String -> Maybe String
 compile s = do
   commands <- wParseString s
-  return (intercalate "\n" $ compileProgram commands)
+  let assembly = WCompiler.compileProgram commands
+  let assemblyStr = map toArm64String assembly
+  return (intercalate "\n" assemblyStr)
