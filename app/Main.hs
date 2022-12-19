@@ -3,13 +3,13 @@ module Main where
 import ASyntax (toArm64String)
 -- import Compiler (compileProgram)
 import BCompiler (compileProgram)
-import BParser (bParseString)
+import BParser (parseString)
 import Control.Monad (void, when)
 import Data.List (intercalate)
 import Data.Maybe (fromMaybe)
 import Text.Read (readMaybe)
 import WCompiler (compileProgram)
-import WParser (wParseString)
+import WParser (parseString)
 
 data Filetype = WS | BF
 
@@ -50,4 +50,16 @@ compile s ft =
       let assemblyStr = map toArm64String assembly
       return (intercalate "\n" assemblyStr)
 
--- return $ BCompiler.compileProgram commands
+-- compile :: String -> Maybe String
+-- compile s = do
+--   commands <- parseString s
+--   return (intercalate "\n" $ compileProgram commands)
+
+compile :: String -> Maybe String
+compile s = do
+  commands <- WParser.parseString s
+  let assembly = WCompiler.compileProgram commands
+  -- commands <- BParser.parseString s
+  -- let assembly = BCompiler.compileProgram commands
+  let assemblyStr = map toArm64String assembly
+  return (intercalate "\n" assemblyStr)

@@ -1,6 +1,6 @@
 module BParserTest where
 
-import BParser (Token (..), bParseString, bParseTokens)
+import BParser (Token (..), parseString, parseTokens)
 import BSyntax (BInstruction (..))
 import Data.Foldable (Foldable (toList))
 import Data.Function ((&))
@@ -33,7 +33,7 @@ instructionToTokens instr = case instr of
   While b -> LBracket : foldMap instructionToTokens b <> [RBracket]
 
 prop_roundtrip_tokens :: [BInstruction] -> Bool
-prop_roundtrip_tokens cs = case bParseTokens (concatMap instructionToTokens cs) of
+prop_roundtrip_tokens cs = case parseTokens (concatMap instructionToTokens cs) of
   Nothing -> False
   Just parseResult -> cs == parseResult
 
@@ -61,7 +61,7 @@ instance Arbitrary BProgramString where
 --   return $ concatMap instructionToTokens t & map tokenToChar
 
 prop_program_parse :: BProgramString -> Bool
-prop_program_parse (BP s) = not . null $ bParseString s
+prop_program_parse (BP s) = not . null $ parseString s
 
 qc :: IO ()
 qc = do

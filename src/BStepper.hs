@@ -7,7 +7,7 @@ import Control.Lens (Ixed (ix), makeLenses, (%~), (&), (.~), (^.), (^?))
 import Control.Monad (forM_, unless, void, when)
 import Control.Monad.Except (ExceptT, MonadError (..), runExceptT)
 import Control.Monad.State (MonadState (get, put), StateT (runStateT))
-import Control.Monad.State.Lazy (StateT, modify)
+import Control.Monad.State.Lazy (StateT, execStateT, modify)
 import Control.Monad.Trans (MonadTrans (..))
 import Data.Char (chr)
 import Data.Map (Map)
@@ -59,3 +59,9 @@ toProgramState program@(instr : instrs) = do
   where
     adjustByte :: (Word8 -> Word8) -> Maybe Word8 -> Maybe Word8
     adjustByte f x = Just $ fromMaybe 0 x & f
+
+execProgram :: MonadReadWrite m => [BInstruction] -> m BStore
+execProgram program = execStateT (toProgramState program) initStore
+
+execProgramIO :: [BInstruction] -> IO BStore
+execProgramIO = execProgram

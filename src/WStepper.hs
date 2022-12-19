@@ -17,12 +17,9 @@ import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Maybe (fromMaybe)
 import GHC.Arr (Ix (range), (!))
+import MonadReadWrite (MonadReadWrite (..))
 import Program (Program, ProgramState, listToArray)
 import WSyntax (WBop (..), WCond (..), WInstruction (..))
-
-class Monad m => MonadReadWrite m where
-  readChar :: m Char
-  writeString :: String -> m ()
 
 data WStore = WStore
   { _valStack :: [Int],
@@ -141,24 +138,6 @@ toProgramState program = do
     push n = do
       (store, pc) <- get
       put (store & valStack %~ (n :), pc)
-
-instance MonadReadWrite IO where
-  readChar :: IO Char
-  readChar = getChar
-  writeString :: String -> IO ()
-  writeString = putStrLn
-
-instance MonadReadWrite m => MonadReadWrite (ExceptT e m) where
-  readChar :: ExceptT e m Char
-  readChar = lift readChar
-  writeString :: String -> ExceptT e m ()
-  writeString = lift . writeString
-
-instance MonadReadWrite m => MonadReadWrite (StateT s m) where
-  readChar :: StateT s m Char
-  readChar = lift readChar
-  writeString :: String -> StateT s m ()
-  writeString = lift . writeString
 
 execProgram :: MonadReadWrite m => Program WInstruction -> m (Either WError (WStore, Int))
 execProgram program = do
