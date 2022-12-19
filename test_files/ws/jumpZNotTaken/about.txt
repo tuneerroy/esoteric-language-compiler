@@ -1,0 +1,7 @@
+push 1
+push 4
+jz S    // shouldn't take this jump
+push 2  // should be ran
+S: 
+outputChar  // should output 2
+end

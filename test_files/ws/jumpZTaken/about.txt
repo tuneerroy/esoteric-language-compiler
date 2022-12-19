@@ -1,0 +1,9 @@
+push 1
+push 1
+push 1
+sub     // stack is 1 0
+jz S    // should take this
+push 2  // should not get here
+S:
+outputNum   // should print 1
+end
