@@ -17,7 +17,8 @@ compileCommand i = case i of
       MovI (Reg 16) 3,
       Svc,
       Ldr (Reg 0) (Reg 26) 0,
-      Ldr (Reg 1) SP 0,
+      -- Ldr (Reg 1) SP 0, CONSUME
+      Ldr (Reg 1) SP 16,
       GetAddress (Reg 2) "heap",
       StrO (Reg 0) (Reg 2) (Reg 1)
     ]
@@ -69,34 +70,34 @@ compileCommand i = case i of
     [ Comment "add",
       Ldr (Reg 0) SP 16,
       Ldr (Reg 1) SP 16,
-      AAdd (Reg 2) (Reg 0) (Reg 1),
+      AAdd (Reg 2) (Reg 1) (Reg 0),
       Psh (Reg 2)
     ]
   Arith Sub ->
     [ Comment "sub",
       Ldr (Reg 0) SP 16,
       Ldr (Reg 1) SP 16,
-      ASub (Reg 2) (Reg 0) (Reg 1),
+      ASub (Reg 2) (Reg 1) (Reg 0),
       Psh (Reg 2)
     ]
   Arith Mul ->
     [ Comment "mul",
       Ldr (Reg 0) SP 16,
       Ldr (Reg 1) SP 16,
-      AMul (Reg 2) (Reg 0) (Reg 1),
+      AMul (Reg 2) (Reg 1) (Reg 0),
       Psh (Reg 2)
     ]
   Arith Div ->
     [ Comment "div",
-      Ldr (Reg 0) SP 16,
       Ldr (Reg 1) SP 16,
+      Ldr (Reg 0) SP 16,
       Bl "_divide",
       Psh (Reg 2)
     ]
   Arith Mod ->
     [ Comment "div",
-      Ldr (Reg 0) SP 16,
       Ldr (Reg 1) SP 16,
+      Ldr (Reg 0) SP 16,
       Bl "_divide",
       Psh (Reg 3)
     ]
@@ -114,13 +115,15 @@ compileCommand i = case i of
     ]
   Branch Zero a ->
     [ Comment "branch zero",
-      Ldr (Reg 0) SP 0,
+      -- Ldr (Reg 0) SP 0, CONSUME
+      Ldr (Reg 0) SP 16,
       Cmp (Reg 0) 0,
       B ASyntax.EQ (toString a)
     ]
   Branch Neg a ->
     [ Comment "branch neg",
-      Ldr (Reg 0) SP 0,
+      -- Ldr (Reg 0) SP 0, CONSUME
+      Ldr (Reg 0) SP 16,
       Cmp (Reg 0) 0,
       B ASyntax.LT (toString a)
     ]
@@ -164,14 +167,16 @@ header =
     ALabel "_output_char",
     MovI (Reg 0) 1,
     GetAddress (Reg 1) "buf",
-    Ldr (Reg 8) SP 0,
+    -- Ldr (Reg 8) SP 0, CONSUME
+    Ldr (Reg 8) SP 16,
     Str (Reg 8) (Reg 1),
     MovI (Reg 2) 1,
     MovI (Reg 16) 4,
     Svc,
     Ret,
     ALabel "_output_num",
-    Ldr (Reg 0) SP 0,
+    -- Ldr (Reg 0) SP 0, CONSUME
+    Ldr (Reg 0) SP 16,
     Psh (Reg 30),
     ALabel "_int_to_ascii",
     Cmp (Reg 0) 0,
@@ -180,7 +185,7 @@ header =
     Psh (Reg 1),
     Mov (Reg 27) (Reg 0),
     Bl "_output_char",
-    Ldr (Reg 18) SP 16,
+    -- Ldr (Reg 28) SP 16, (remove this i think)
     Mov (Reg 0) (Reg 27),
     MovI (Reg 27) 0,
     Negs (Reg 0) (Reg 0),
@@ -202,7 +207,7 @@ header =
     Cmp (Reg 27) 0,
     B LE "_done_ascii",
     Bl "_output_char",
-    Ldr (Reg 28) SP 16,
+    -- Ldr (Reg 28) SP 16, (remove this i think)
     ASubI (Reg 27) (Reg 27) 1,
     Bl "_print_stack",
     ALabel "_done_ascii",
