@@ -31,4 +31,5 @@ instance Arbitrary BInstruction where
       )
 
   shrink :: BInstruction -> [BInstruction]
-  shrink v = []
+  shrink (While b) = b
+  shrink _ = []
