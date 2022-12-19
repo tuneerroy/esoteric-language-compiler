@@ -93,6 +93,7 @@ library
       BSyntax,
       BParser,
       BStepper,
+      NonNeg,
       WSyntax,
       WParser,
       WStepper,

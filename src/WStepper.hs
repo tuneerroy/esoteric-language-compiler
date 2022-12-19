@@ -17,16 +17,16 @@ import Data.Map (Map)
 import Data.Map qualified as Map
 import GHC.Arr (Ix (range), (!))
 import Program (Program, ProgramState, listToArray)
-import WSyntax (WBop (..), WCond (..), WInstruction (..), WVal)
+import WSyntax (WBop (..), WCond (..), WInstruction (..))
 
 class Monad m => MonadReadWrite m where
   readChar :: m Char
   writeString :: String -> m ()
 
 data WStore = WStore
-  { _valStack :: [WVal],
-    _callStack :: [WVal],
-    _heap :: Map WVal WVal
+  { _valStack :: [Int],
+    _callStack :: [Int],
+    _heap :: Map Int Int
   }
 
 makeLenses ''WStore
@@ -41,10 +41,9 @@ data WError
   = ProgramOutOfBounds
   | ValStackEmpty
   | CallStackEmpty
-  | StackOutOfBounds
   | HeapKeyNotFound
   | LabelFound
-  deriving (Show)
+  deriving (Eq, Show)
 
 toProgramState :: forall m. (ProgramState WStore m, MonadReadWrite m, MonadError WError m) => Program WInstruction -> m ()
 toProgramState program = do
@@ -77,13 +76,13 @@ toProgramState program = do
       push n
     Discard -> void pop
     Copy i -> do
-      n <- case store ^. valStack ^? ix i of
-        Nothing -> throwError StackOutOfBounds
+      n <- case store ^. valStack ^? ix (fromEnum i) of
+        Nothing -> throwError ValStackEmpty
         Just n -> pure n
       push n
     Slide n -> do
       top <- pop
-      forM_ [0 .. n] $ const pop
+      forM_ [0 .. fromEnum n] $ const pop
       push top
     Arith wb -> do
       b <- pop

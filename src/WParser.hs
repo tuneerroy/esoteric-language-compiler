@@ -8,7 +8,7 @@ import Data.List (foldl', intercalate)
 import Data.List.NonEmpty (NonEmpty, nonEmpty)
 import Data.Maybe (mapMaybe)
 import Parser (Parser, parse, parseFromFile, token, tokens)
-import WSyntax (WBop (..), WCond (..), WInstruction (..), WVal (..))
+import WSyntax (WBop (..), WCond (..), WInstruction (..))
 
 data Token = Space | Tab | LF deriving (Eq, Show, Ord)
 
@@ -34,12 +34,12 @@ constPTok t = (token t $>)
 constP :: [Token] -> a -> WParser a
 constP ts = (tokens ts $>)
 
-numberP :: WParser WVal
+numberP :: WParser Int
 numberP =
   (constPTok Tab negate <|> constPTok Space id)
     <*> (binToNum <$> (some (constPTok Space 0 <|> constPTok Tab 1) <* token LF))
   where
-    binToNum :: [WVal] -> WVal
+    binToNum :: [Int] -> Int
     binToNum = foldl' (\acc x -> acc * 2 + x) 0
 
 labelP :: WParser WLabel
@@ -63,10 +63,10 @@ commandP = asum [ioP, stackP, arithP, flowP, heapP]
         *> asum
           [ constPTok Space Push <*> numberP,
             constP [LF, Space] Dup,
-            constP [Tab, Space] Copy <*> numberP,
+            constP [Tab, Space] (Copy . toEnum) <*> numberP,
             constP [LF, Tab] Swap,
             constP [LF, LF] Discard,
-            constP [Tab, LF] Slide <*> numberP
+            constP [Tab, LF] (Slide . toEnum) <*> numberP
           ]
     arithP :: WParser WCommand
     arithP =

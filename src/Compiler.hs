@@ -72,7 +72,7 @@ compileCommand i = case i of
     ]
   Copy n ->
     [ "// copy",
-      "ldr x0, [sp, #" ++ show ((n - 1) * 16) ++ "]",
+      "ldr x0, [sp, #" ++ show ((fromEnum n - 1) * 16) ++ "]",
       "str x0, [sp, #-16]!"
     ]
   Slide n ->
@@ -356,7 +356,7 @@ ioProgram :: [WInstruction WLabel]
 ioProgram = [InputChar, InputNum, OutputChar, OutputNum]
 
 stackProgram :: [WInstruction WLabel]
-stackProgram = [Push 5, Dup, Swap, Discard, Copy 2, Slide 2]
+stackProgram = [Push 5, Dup, Swap, Discard, Copy (toEnum 2), Slide (toEnum 2)]
 
 arithProgram :: [WInstruction WLabel]
 arithProgram = [Arith Add, Arith Sub, Arith Mul, Arith Div, Arith Mod]

@@ -57,12 +57,12 @@ compileCommand i = case i of
     ]
   Copy n ->
     [ Comment "copy",
-      LdrPreOff (Reg 0) SP ((n - 1) * 16),
+      LdrPreOff (Reg 0) SP ((fromEnum n - 1) * 16),
       Psh (Reg 0)
     ]
   Slide n ->
     [ Comment "slide",
-      MovI (Reg 0) n,
+      MovI (Reg 0) (fromEnum n),
       Bl "_slide"
     ]
   Arith Add ->
