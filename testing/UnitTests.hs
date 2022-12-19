@@ -18,7 +18,7 @@ import Test.HUnit (Test)
 import Test.HUnit.Base (assert)
 import WCompiler (compileProgram)
 import WParser (WCommand, parseString)
-import WStepper (execProgram)
+import WStepper (execProgram, execProgramIO)
 import WSyntax ()
 
 -- take in filename (including directory)
@@ -40,30 +40,35 @@ createUnitTest ::
   Language a ->
   IO ()
 createUnitTest dir ext args lang = do
+  putStrLn dir
   let totalPath = dir ++ "/program"
   program <- readFile (totalPath ++ "." ++ ext)
   writeFile (dir ++ "/in.txt") args
+  putStrLn "here"
   case parse lang program of
-    Nothing -> error "Invalid program"
-    Just parsed ->
+    Nothing -> error "Unable to parse"
+    Just parsed -> do
+      -- avengers assemble
+      writeFile (totalPath ++ ".s") (instructionsToStrings $ compile lang parsed)
+      -- compile ARM assembly
+      putStrLn "here4"
+      runScript $ "as -o " ++ totalPath ++ ".o " ++ totalPath ++ ".s"
+      -- create executable
+      runScript $
+        "ld -macosx_version_min 11.0.0 -o "
+          ++ totalPath
+          ++ " "
+          ++ totalPath
+          ++ ".o -lSystem -syslibroot `xcrun -sdk macosx \
+             \ --show-sdk-path` -e _start -arch arm64"
+      -- run executable and output to "output.txt"
+      putStrLn "here5"
+      runScript $ "./" ++ totalPath ++ " > " ++ dir ++ "/out.txt"
+      actual <- readFile (dir ++ "/out.txt")
+      putStrLn "read file"
       case interpret lang parsed args of
-        Nothing -> error "Unable to parse"
+        Nothing -> error "Unable to interpret"
         Just expected -> do
-          -- avengers assemble
-          writeFile (totalPath ++ ".s") (instructionsToStrings $ compile lang parsed)
-          -- compile ARM assembly
-          runScript $ "as -o " ++ totalPath ++ ".o " ++ totalPath ++ ".s"
-          -- create executable
-          runScript $
-            "ld -macosx_version_min 11.0.0 -o "
-              ++ totalPath
-              ++ " "
-              ++ totalPath
-              ++ ".o -lSystem -syslibroot `xcrun -sdk macosx \
-                 \ --show-sdk-path` -e _start -arch arm64"
-          -- run executable and output to "output.txt"
-          runScript $ "./" ++ totalPath ++ " > " ++ dir ++ "/out.txt"
-          actual <- readFile (dir ++ "/out.txt")
           putStr $ "Expected: <>" ++ expected ++ "<>\n"
           putStr $ "Actual: <>" ++ actual ++ "<>\n"
           assert $ expected == actual
@@ -116,7 +121,7 @@ testWSDivDoub =
   createUnitTest
     (wsFilePath ++ "divdoub")
     "ws"
-    ""
+    "18"
     wLanguage
 
 testWSFib :: IO ()
@@ -124,7 +129,7 @@ testWSFib =
   createUnitTest
     (wsFilePath ++ "fib")
     "ws"
-    "10"
+    "1"
     wLanguage
 
 testWS1To100 :: IO ()
@@ -219,11 +224,9 @@ bLanguage :: Language BInstruction
 bLanguage = Language BParser.parseString bInterpreter BCompiler.compileProgram
 
 bInterpreter :: [BInstruction] -> String -> Maybe String
-bInterpreter instrs inputs = undefined
+bInterpreter instrs input = Just res
   where
-    x :: FakeIO BStore = BStepper.execProgram instrs
-
---let Identity s = outputOf (Identity <$> BStepper.execProgram instrs) inputs in Just s
+    Identity res = outputOf (Identity <$> BStepper.execProgram instrs) input
 
 main :: IO ()
 main =

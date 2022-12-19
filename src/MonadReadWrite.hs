@@ -1,5 +1,6 @@
 module MonadReadWrite where
 
+import Control.Monad (unless)
 import Control.Monad.Except (ExceptT)
 import Control.Monad.State (StateT)
 import Control.Monad.Trans (MonadTrans (lift))
@@ -25,3 +26,10 @@ instance MonadReadWrite m => MonadReadWrite (StateT s m) where
   readChar = lift readChar
   writeString :: String -> StateT s m ()
   writeString = lift . writeString
+
+readLine :: MonadReadWrite m => m String
+readLine = do
+  c <- readChar
+  case c of
+    '\n' -> return ""
+    _ -> (c :) <$> readLine

@@ -48,15 +48,17 @@ put' s' = S $ const ((), s')
 instance MonadReadWrite FakeIO where
   readChar = do
     state <- get'
-    let (x : xs) = input state
-    put' $ state {input = xs}
-    return x
+    case input state of
+      [] -> error "No input"
+      x : xs -> do
+        put' $ state {input = xs}
+        return x
   writeString s = do
     state <- get'
     put' $ state {output = output state . (s <>)}
 
 ofInput :: String -> FakeState
-ofInput = flip FakeState id
+ofInput s = FakeState (s ++ "\n") id
 
 outputOf :: Monad m => FakeIO (m s) -> String -> m String
 outputOf fakeIO input = e >> return (output state [])

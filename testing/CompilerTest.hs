@@ -70,7 +70,7 @@ prop_model commands = QC.monadicIO $ do
           Left _ -> Nothing
           Right s -> return s
 
-  -- If no output is interpreted, fail entirely
+  -- If no output is interpreted, discard the test
   case maybeInterpretedOutput of
     Nothing -> QC.stop QC.rejected
     Just interpretedOutput -> do
@@ -88,16 +88,12 @@ prop_model commands = QC.monadicIO $ do
       -- Read in the output
       executableOutput <- QC.run $ readFile outFile
 
-      QC.run $ print executableOutput
+      QC.run $ print ("Interpreted: " ++ interpretedOutput)
+      QC.run $ print ("Executable: " ++ executableOutput)
 
-      QC.assert (filter badChar executableOutput == filter badChar interpretedOutput)
-  where
-    badChar :: Char -> Bool
-    badChar c =
-      let asciiCode = fromEnum c
-       in asciiCode >= 32 && asciiCode <= 255
+      QC.assert (executableOutput == interpretedOutput)
 
 qc :: IO ()
 qc = do
   putStrLn "Prop Model"
-  QC.quickCheck $ QC.forAll validHeapAndOutputProgram prop_model
+  QC.quickCheck $ QC.forAllShrink validOutputProgram (map (\l' -> l' <> [End]) . shrink . init) prop_model

@@ -80,7 +80,7 @@ command = asum [ioP, stackP, arithP, flowP, heapP]
         *> asum
           [ constP [Space, Space] Label <*> labelP,
             constP [Space, Tab] Call <*> labelP,
-            constP [Space, LF] (Branch Any) <*> labelP,
+            constP [Space, LF] Jump <*> labelP,
             constP [Tab, Space] (Branch Zero) <*> labelP,
             constP [Tab, Tab] (Branch Neg) <*> labelP,
             constP [Tab, LF] Return,
@@ -94,7 +94,7 @@ command = asum [ioP, stackP, arithP, flowP, heapP]
            )
 
 block :: WParser [WCommand]
-block = many command <* eof
+block = many command
 
 parseTokens :: [Token] -> Maybe [WCommand]
 parseTokens = parse block

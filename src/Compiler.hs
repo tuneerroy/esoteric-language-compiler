@@ -7,7 +7,7 @@ import Test.HUnit (Test (..), (~:), (~?=))
 import WParser (Token (..), WLabel (..))
 import WSyntax
   ( WBop (..),
-    WCond (Any, Neg, Zero),
+    WCond (Neg, Zero),
     WInstruction (..),
   )
 
@@ -123,7 +123,7 @@ compileCommand i = case i of
     [ "// call",
       "bl " ++ toString a
     ]
-  Branch Any a ->
+  Jump a ->
     [ "// branch",
       "b " ++ toString a
     ]

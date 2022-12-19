@@ -2,7 +2,7 @@ module WCompiler where
 
 import ASyntax (AInstruction (..), BranchCond (..), Reg32 (..), Reg64 (..))
 import WParser (Token (..), WLabel (..))
-import WSyntax (WBop (..), WCond (Any, Neg, Zero), WInstruction (..))
+import WSyntax (WBop (..), WCond (Neg, Zero), WInstruction (..))
 
 -- TODO: maybe make this a type class?
 
@@ -111,7 +111,7 @@ compileCommand i = case i of
     [ Comment "call",
       Bl (toString a)
     ]
-  Branch Any a ->
+  Jump a ->
     [ Comment "branch",
       B ASyntax.None (toString a)
     ]

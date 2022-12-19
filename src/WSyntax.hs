@@ -1,16 +1,17 @@
 module WSyntax (WBop (..), WCond (..), WInstruction (..)) where
 
 -- import Program (Instruction (..))
+
+import NonNeg (NonNeg)
 import Test.QuickCheck (Arbitrary (arbitrary, shrink), Gen)
 import Test.QuickCheck.Gen (elements, oneof)
-import NonNeg (NonNeg)
 
 data WBop = Add | Sub | Mul | Div | Mod deriving (Eq, Show)
 
 instance Arbitrary WBop where
   arbitrary = elements [Add, Sub, Mul, Div, Mod]
 
-data WCond = Any | Zero | Neg deriving (Eq, Show)
+data WCond = Zero | Neg deriving (Eq, Show)
 
 -- In the offical implementation, stack values are Integer
 -- But that would be a pain to convert assembly to
@@ -34,6 +35,7 @@ data WInstruction l
     Label l
   | Call l
   | Branch WCond l
+  | Jump l
   | Return
   | End
   | -- Heap Access
@@ -62,7 +64,8 @@ instance Arbitrary l => Arbitrary (WInstruction l) where
         Arith <$> arbitrary,
         Label <$> arbitrary,
         Call <$> arbitrary,
-        Branch <$> elements [Any, Zero, Neg] <*> arbitrary,
+        Branch <$> elements [Zero, Neg] <*> arbitrary,
+        Jump <$> arbitrary,
         pure Return,
         pure End,
         pure Store,

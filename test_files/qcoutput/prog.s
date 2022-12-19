@@ -123,54 +123,16 @@ mov x30, x22
 ret
 _start:
 // push
-mov x0, #14
+mov x0, #-103
 str x0, [sp, #-16]!
 // push
-mov x0, #13
+mov x0, #55
 str x0, [sp, #-16]!
-// push
-mov x0, #-6
-str x0, [sp, #-16]!
-// store
-ldr x0, [sp], #16
+// div
 ldr x1, [sp], #16
-mov x3, #8
-adrp x2, heap@page
-add x2, x2, heap@pageoff
-mul x1, x1, x3
-str x0, [x2, x1]
-// dup
 ldr x0, [sp], #16
-str x0, [sp, #-16]!
-str x0, [sp, #-16]!
-// outputNum
-bl _output_num
-// push
-mov x0, #4
-str x0, [sp, #-16]!
-// push
-mov x0, #13
-str x0, [sp, #-16]!
-// retrieve
-ldr x1, [sp], #16
-mov x3, #8
-mul x1, x1, x3
-adrp x2, heap@page
-add x2, x2, heap@pageoff
-ldr x0, [x2, x1]
-str x0, [sp, #-16]!
-// push
-mov x0, #-6
-str x0, [sp, #-16]!
-// push
-mov x0, #-15
-str x0, [sp, #-16]!
-// push
-mov x0, #-11
-str x0, [sp, #-16]!
-// push
-mov x0, #5
-str x0, [sp, #-16]!
+bl _divide
+str x2, [sp, #-16]!
 // end
 b end
 end:

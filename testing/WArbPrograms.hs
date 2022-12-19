@@ -13,8 +13,8 @@ import WSyntax (WInstruction (..))
 
 -- | Quickcheck tests
 numPops :: WInstruction l -> Int
-numPops InputChar = 0
-numPops InputNum = 0
+numPops InputChar = 1
+numPops InputNum = 1
 numPops OutputChar = 1
 numPops OutputNum = 1
 numPops (Push _) = 0
@@ -26,6 +26,7 @@ numPops (Slide n) = fromEnum n + 1
 numPops (Arith _) = 2
 numPops (Label _) = 0
 numPops (Call _) = 0
+numPops (Jump _) = 0
 numPops (Branch _ _) = 0
 numPops Return = 0
 numPops End = 0
@@ -33,8 +34,8 @@ numPops Store = 1
 numPops Retrieve = 0
 
 numPushes :: WInstruction l -> Int
-numPushes InputChar = 1
-numPushes InputNum = 1
+numPushes InputChar = 0
+numPushes InputNum = 0
 numPushes OutputChar = 0
 numPushes OutputNum = 0
 numPushes (Push _) = 1
@@ -46,6 +47,7 @@ numPushes (Slide n) = 1
 numPushes (Arith _) = 1
 numPushes (Label _) = 0
 numPushes (Call _) = 0
+numPushes (Jump _) = 0
 numPushes (Branch _ _) = 0
 numPushes Return = 0
 numPushes End = 0
@@ -76,7 +78,10 @@ smallStackInstr = do
     _ -> return instr
 
 programOf :: Gen (WInstruction l) -> Gen [WInstruction l]
-programOf gen = (++ [End]) <$> QC.listOf gen
+programOf gen = do
+  size <- QC.getSize
+  instrs <- QC.resize (size * 5) $ QC.listOf gen
+  return (instrs ++ [End])
 
 stackProgram :: Gen [WInstruction l]
 stackProgram = programOf smallStackInstr
@@ -110,7 +115,7 @@ validStackProgram =
     <$> programOf (QC.oneof [smallStackInstr, Push <$> arbitrary])
 
 outputInstr :: Gen (WInstruction l)
-outputInstr = QC.elements [OutputChar, OutputNum]
+outputInstr = QC.elements [OutputNum]
 
 validOutputProgram :: Gen [WInstruction l]
 validOutputProgram =
