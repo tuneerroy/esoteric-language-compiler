@@ -31,11 +31,9 @@ makeLenses ''BStore
 initStore :: BStore
 initStore = BStore 0 Map.empty
 
-data BError = MissingMatchingBracket | ProgramOutOfBounds
-
 -- TODO: maybe extract runProgram out? everything dealing with program counter
 
-runProgram :: forall m. (MonadState BStore m, MonadReadWrite m, MonadError BError m) => [BInstruction] -> m ()
+runProgram :: forall m. (MonadState BStore m, MonadReadWrite m) => [BInstruction] -> m ()
 runProgram [] = return ()
 runProgram program@(instr : instrs) = do
   store <- get

@@ -19,7 +19,7 @@ import WArbPrograms (validOutputProgram)
 import WCompiler (compileProgram)
 import WParser (WCommand)
 import WParserTest qualified
-import WStepper (MonadReadWrite (readChar, writeString), WError (ValStackEmpty), initState, runProgram, runProgramIO)
+import WStepper (MonadReadWrite (readChar, writeString), WError (ValStackEmpty), execProgram, initState)
 import WSyntax (WInstruction (..))
 
 progFile :: FilePath
@@ -66,7 +66,7 @@ prop_model commands = QC.monadicIO $ do
   --Get the interpreted output
   let maybeInterpretedOutput = do
         arr <- mkProgram commands
-        case outputOf (runProgram arr) [] of
+        case outputOf (execProgram arr) [] of
           Left _ -> Nothing
           Right s -> return s
 
@@ -87,6 +87,8 @@ prop_model commands = QC.monadicIO $ do
 
       -- Read in the output
       executableOutput <- QC.run $ readFile outFile
+
+      QC.run $ print executableOutput
 
       QC.assert (filter badChar executableOutput == filter badChar interpretedOutput)
   where

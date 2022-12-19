@@ -39,6 +39,7 @@ initState = (initStore, 0)
 
 data WError
   = ProgramOutOfBounds
+  | InvalidOutputChar
   | ValStackEmpty
   | CallStackEmpty
   | HeapKeyNotFound
@@ -61,7 +62,9 @@ toProgramState program = do
       push v
     OutputChar -> do
       n <- pop
-      writeString [toEnum n]
+      if n < 32 || n > 255
+        then throwError InvalidOutputChar
+        else writeString [toEnum n]
     OutputNum -> do
       n <- pop
       writeString $ show n
@@ -158,14 +161,14 @@ instance MonadReadWrite m => MonadReadWrite (StateT s m) where
   writeString :: String -> StateT s m ()
   writeString = lift . writeString
 
-runProgram :: MonadReadWrite m => Program WInstruction -> m (Either WError ())
-runProgram program = do
+execProgram :: MonadReadWrite m => Program WInstruction -> m (Either WError ())
+execProgram program = do
   let programState = toProgramState program
   runExceptT $ evalStateT programState initState
 
-runProgramIO :: Program WInstruction -> IO ()
-runProgramIO program = do
-  possibleError <- runProgram program
+execProgramIO :: Program WInstruction -> IO ()
+execProgramIO program = do
+  possibleError <- execProgram program
   case possibleError of
     Left err -> error $ show err
     Right () -> return ()

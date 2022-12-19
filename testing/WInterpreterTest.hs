@@ -7,7 +7,7 @@ import Test.HUnit (Assertion, Counts, Test (..), assert, runTestTT, (~:), (~?=))
 import Test.QuickCheck (Property)
 import Test.QuickCheck qualified as QC
 import WArbPrograms
-import WStepper (MonadReadWrite (..), WError (..), runProgram, runProgramIO)
+import WStepper (MonadReadWrite (..), WError (..), execProgram)
 import WSyntax (WBop (..), WInstruction (..))
 
 prop_verifyEmptyStack :: [WInstruction Int] -> Property
@@ -16,7 +16,7 @@ prop_verifyEmptyStack instrs = case err of
   Left _ -> QC.property QC.Discard
   Right _ -> instrs & QC.collect "success" . QC.property . stackVerify
   where
-    err = outputOf (runProgram $ listToArray instrs) []
+    err = outputOf (execProgram $ listToArray instrs) []
 
 prop_validateNonemptyStack :: [WInstruction Int] -> Property
 prop_validateNonemptyStack instrs = case err of
@@ -24,14 +24,14 @@ prop_validateNonemptyStack instrs = case err of
   Left _ -> QC.property QC.Discard
   Right _ -> QC.collect "success" $ QC.property True
   where
-    err = outputOf (runProgram $ listToArray instrs) []
+    err = outputOf (execProgram $ listToArray instrs) []
 
 prop_outputCount :: [WInstruction Int] -> Property
 prop_outputCount instrs = case err of
   Left we -> QC.property QC.Discard
   Right s -> QC.property (length s >= outputCount instrs)
   where
-    err = outputOf (runProgram $ listToArray instrs) []
+    err = outputOf (execProgram $ listToArray instrs) []
     outputCount = length . filter (\x -> x `elem` [OutputChar, OutputNum])
 
 qc :: IO ()

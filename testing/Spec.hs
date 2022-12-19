@@ -8,9 +8,10 @@ import WParserTest qualified
 
 main :: IO ()
 main = do
-  putStrLn "Running Parser Tests"
-  WParserTest.qc
-  WInterpreterTest.qc
-  BParserTest.qc
+  -- putStrLn "Running Parser Tests"
+  -- WParserTest.qc
+  --WInterpreterTest.qc
+  --BParserTest.qc
   UnitTests.test
-  CompilerTest.qc
+
+-- CompilerTest.qc

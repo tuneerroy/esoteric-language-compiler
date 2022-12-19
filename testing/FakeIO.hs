@@ -62,7 +62,7 @@ instance MonadReadWrite FakeIO where
     return x
   writeString s = do
     state <- get'
-    put' $ state {output = (s <>) . output state}
+    put' $ state {output = output state . (s <>)}
 
 ofInput :: String -> FakeState
 ofInput = flip FakeState id

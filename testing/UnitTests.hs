@@ -1,20 +1,20 @@
 module UnitTests where
 
-import ASyntax
+import ASyntax (AInstruction, instructionsToStrings)
 import BCompiler qualified
 import BParser qualified
 import BStepper qualified
 import BSyntax (BInstruction)
-import Data.Function
+import Data.Function ((&))
 import FakeIO (outputOf)
 import Program (listToArray, mkProgram)
-import System.Process
+import System.Process (createProcess, shell, waitForProcess)
 import Test.HUnit (Test)
 import Test.HUnit.Base (assert)
-import WCompiler
-import WParser
-import WStepper (runProgram)
-import WSyntax
+import WCompiler (compileProgram)
+import WParser (WCommand, wParseString)
+import WStepper (execProgram)
+import WSyntax ()
 
 -- take in filename (including directory)
 -- read in the data, hold in string
@@ -37,7 +37,7 @@ main ::
 main dir ext args lang = do
   let totalPath = dir ++ "/program"
   program <- readFile (totalPath ++ "." ++ ext)
-  createInputFile dir args
+  writeFile (dir ++ "/in.txt") args
   case parse lang program of
     Nothing -> error "Invalid program"
     Just parsed ->
@@ -45,8 +45,10 @@ main dir ext args lang = do
         Nothing -> error "Unable to parse"
         Just expected -> do
           -- avengers assemble
-          runScript $ "as -o " ++ totalPath ++ ".o " ++ totalPath ++ ".s"
+          writeFile (totalPath ++ ".s") (instructionsToStrings $ compile lang parsed)
           -- compile ARM assembly
+          runScript $ "as -o " ++ totalPath ++ ".o " ++ totalPath ++ ".s"
+          -- create executable
           runScript $
             "ld -macosx_version_min 11.0.0 -o "
               ++ totalPath
@@ -54,10 +56,11 @@ main dir ext args lang = do
               ++ totalPath
               ++ ".o -lSystem -syslibroot `xcrun -sdk macosx \
                  \ --show-sdk-path` -e _start -arch arm64"
-          runScript $ ".\\" ++ totalPath
           -- run executable and output to "output.txt"
           runScript $ "./" ++ totalPath ++ " > " ++ dir ++ "/out.txt"
-          actual <- readOutputFile dir
+          actual <- readFile (dir ++ "/out.txt")
+          putStr $ "Expected: <>" ++ expected ++ "<>"
+          putStr $ "Actual: <>" ++ actual ++ "<>"
           assert $ expected == actual
 
 test :: IO ()
@@ -85,7 +88,7 @@ wLanguage = Language WParser.wParseString wInterpreter WCompiler.compileProgram
 wInterpreter :: [WCommand] -> String -> Maybe String
 wInterpreter commands inputs = do
   instrs <- mkProgram commands
-  case outputOf (runProgram instrs) inputs of
+  case outputOf (execProgram instrs) inputs of
     Left err -> Nothing
     Right s -> Just s
 
@@ -118,11 +121,3 @@ bInterpreter = undefined
 
 --   compile :: [WCommand] -> [AInstruction]
 --   compile = WCompiler.compileProgram
-
-createInputFile :: FilePath -> String -> IO ()
-createInputFile dir = writeFile (dir ++ "/in.txt")
-
-readOutputFile :: FilePath -> IO String
-readOutputFile dir = readFile (dir ++ "/out.txt")
-
--- createInputFile :: String ->
