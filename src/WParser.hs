@@ -12,7 +12,7 @@ import WSyntax (WBop (..), WCond (..), WInstruction (..))
 
 data Token = Space | Tab | LF deriving (Eq, Show, Ord)
 
-newtype WLabel = WLabel (NonEmpty Token) deriving (Eq, Show)
+newtype WLabel = WLabel (NonEmpty Token) deriving (Eq, Show, Ord)
 
 type WCommand = WInstruction WLabel
 

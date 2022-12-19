@@ -16,6 +16,14 @@ import WStepper (MonadReadWrite (readChar, writeString), WError (ValStackEmpty),
 import WSyntax (WInstruction (..))
 import Control.Monad.Identity (Identity)
 import Control.Lens (Identity(..))
+import WParser (WCommand)
+import WCompiler (compileProgram)
+import ASyntax (toArm64String)
+import Data.List (intercalate)
+import Data.Function ((&))
+
+outFile :: FilePath
+outFile = "/whitespace/quickCheckTest.asm"
 
 s :: CreateProcess
 s = shell "bash script.sh"
@@ -56,6 +64,24 @@ instance MonadReadWrite FileO where
   writeString s = FileO $ do
     filePath <- ask
     lift $ appendFile filePath s
+
+-- | Quickcheck
+prop_model :: [WCommand] -> Property
+prop_model commands = monadicIO $ do
+
+  -- Write the assembly file
+  compileProgram commands
+    & map toArm64String
+    & intercalate "\n"
+    & writeFile outFile
+    & run
+
+  
+
+  -- let assemblyStr = map toArm64String assembly
+  -- return (intercalate "\n" assemblyStr)
+
+  QC.assert True
 
 qc :: IO ()
 qc = do return ()
