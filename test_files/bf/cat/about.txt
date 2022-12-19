@@ -1,3 +1,0 @@
-Credit:
-
-https://github.com/DaikiMaekawa/brainfuck-echo

@@ -14,7 +14,7 @@ import WParser (parseString)
 data Filetype = WS | BF
 
 -- createUnitTest ::
---   String -> -- Directory Name, Ex: "test_files"
+--   String -> -- Directory Name, Ex: "examples"
 --   String -> --Filename Extension, Ex: ".ws"
 --   String -> -- Program Args, Ex: "12+23-*"
 --   Language a ->

@@ -91,7 +91,7 @@ library
       ASyntax,
       BCompiler,
       BParser,
-      BStepper,
+      BInterpreter,
       BSyntax,
       Compiler,
       Parser,
@@ -100,7 +100,7 @@ library
       NonNeg,
       WCompiler
       WParser,
-      WStepper,
+      WInterpreter,
       WSyntax
       
   hs-source-dirs:
@@ -127,7 +127,7 @@ test-suite project-cis5520-test
   main-is: 
       Spec.hs
   hs-source-dirs:
-      testing
+      tests
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       project-cis5520

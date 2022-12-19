@@ -1,6 +1,0 @@
-push 1
-jmp S 
-push 2 // never called
-S:
-outputNum // should output 1
-end

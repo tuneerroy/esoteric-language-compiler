@@ -1,9 +1,0 @@
-push 1
-push 1
-push 1
-sub         // stack is 1 0
-jn S        // shouldn't take this
-push 2      // should run this
-S:
-outputNum   // should print 2
-end
