@@ -20,6 +20,8 @@ compileCommand i = case i of
       -- Ldr (Reg 1) SP 0, CONSUME
       Ldr (Reg 1) SP 16,
       GetAddress (Reg 2) "heap",
+      MovI (Reg 3) 8,
+      AMul (Reg 1) (Reg 1) (Reg 3),
       StrO (Reg 0) (Reg 2) (Reg 1)
     ]
   InputNum ->
@@ -139,12 +141,16 @@ compileCommand i = case i of
     [ Comment "store",
       Ldr (Reg 0) SP 16,
       Ldr (Reg 1) SP 16,
+      MovI (Reg 3) 8, -- ADDED
       GetAddress (Reg 2) "heap",
+      AMul (Reg 1) (Reg 1) (Reg 3), -- ADDED
       StrO (Reg 0) (Reg 2) (Reg 1)
     ]
   Retrieve ->
     [ Comment "retrieve",
       Ldr (Reg 1) SP 16,
+      MovI (Reg 3) 8, -- ADDED
+      AMul (Reg 1) (Reg 1) (Reg 3), -- ADDED
       GetAddress (Reg 2) "heap",
       LdrO (Reg 0) (Reg 2) (Reg 1),
       Psh (Reg 0)
@@ -273,6 +279,8 @@ header =
     AMul (Reg 23) (Reg 23) (Reg 21), -- ADDITION
     Ldr (Reg 1) SP 16,
     GetAddress (Reg 2) "heap",
+    MovI (Reg 3) 8,
+    AMul (Reg 1) (Reg 1) (Reg 3),
     StrO (Reg 23) (Reg 2) (Reg 1),
     Mov (Reg 30) (Reg 22),
     Ret,
