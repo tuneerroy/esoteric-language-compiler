@@ -35,34 +35,34 @@ data BError = MissingMatchingBracket | ProgramOutOfBounds
 
 -- TODO: maybe extract runProgram out? everything dealing with program counter
 
-runProgram :: forall m. (MonadReadWrite m, MonadError BError m) => (BStore, [BInstruction]) -> m ()
-runProgram (store, program) = do
-  instr <- case program ^? ix pc of
-    Nothing -> throwError ProgramOutOfBounds
-    Just wi -> return wi
+runProgram :: forall m. (MonadState BStore m, MonadReadWrite m, MonadError BError m) => [BInstruction] -> m ()
+runProgram [] = return ()
+runProgram (instr : instrs) = do
+  store <- get
   case instr of
     IncrPtr -> do
-      put (store & ptr %~ (+) 1, pc)
+      put (store & ptr %~ (+) 1)
+      runProgram instrs
     DecrPtr -> do
-      put (store & ptr %~ (-) 1, pc)
+      put (store & ptr %~ (-) 1)
+      runProgram instrs
     IncrByte -> do
-      put (store & heap %~ Map.alter (adjustByte $ (+) 1) (_ptr store), pc)
+      put (store & heap %~ Map.alter (adjustByte $ (+) 1) (_ptr store))
+      runProgram instrs
     DecrByte -> do
-      put (store & heap %~ Map.alter (adjustByte $ (-) 1) (_ptr store), pc)
-    Output ->
-      let v = Map.findWithDefault 0 (_ptr store) (_heap store)
-       in writeString [fromEnum v & chr]
+      put (store & heap %~ Map.alter (adjustByte $ (-) 1) (_ptr store))
+      runProgram instrs
+    Output -> do
+      writeString [chr $ fromEnum $ Map.findWithDefault 0 (_ptr store) (_heap store)]
+      runProgram instrs
     Input -> do
       v <- readChar
-      put (store & heap %~ Map.insert (_ptr store) (fromEnum v & toEnum), pc)
-    While s -> undefined
-  -- WhileStart v -> case Map.findWithDefault 0 (_ptr store) (_heap store) of
-  --   0 -> put (store, v)
-  --   _ -> put (store, pc)
-  -- WhileEnd v -> put (store, v)
-  put (store, pc + 1)
-  unless (pc == snd (bounds program)) $ do
-    runProgram program
+      put (store & heap %~ Map.insert (_ptr store) (toEnum $ fromEnum v))
+      runProgram instrs
+    While s -> do
+      case Map.findWithDefault 0 (_ptr store) (_heap store) of
+        0 -> runProgram instrs
+        _ -> runProgram (s ++ instrs)
   where
     adjustByte :: (Word8 -> Word8) -> Maybe Word8 -> Maybe Word8
     adjustByte f x = Just $ fromMaybe 0 x & f

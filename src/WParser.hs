@@ -107,4 +107,4 @@ wParseTokens :: [Token] -> Maybe [WCommand]
 wParseTokens = parse blockP
 
 wParseString :: String -> Maybe [WCommand]
-wParseString = parse blockP . tokenize
+wParseString = wParseTokens . tokenize

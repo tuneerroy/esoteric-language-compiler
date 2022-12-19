@@ -90,6 +90,9 @@ library
   exposed-modules:
       Parser,
       Program,
+      BSyntax,
+      BParser,
+      BStepper,
       WSyntax,
       WParser,
       WStepper,

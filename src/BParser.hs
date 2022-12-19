@@ -1,6 +1,6 @@
 module BParser where
 
-import BSyntax
+import BSyntax (BInstruction (..))
 import Control.Applicative (Alternative (many))
 import Data.Foldable (asum)
 import Data.Functor (($>))
@@ -60,5 +60,8 @@ commandB =
 blockB :: BParser [BInstruction]
 blockB = many commandB
 
+bParseTokens :: [Token] -> Maybe [BInstruction]
+bParseTokens = parse blockB
+
 bParseString :: String -> Maybe [BInstruction]
-bParseString = parse blockB . tokenize
+bParseString = bParseTokens . tokenize
