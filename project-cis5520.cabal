@@ -95,13 +95,13 @@ library
       BStepper,
       BCompiler,
       NonNeg,
+      MonadReadWrite,
       WSyntax,
       WParser,
       WStepper,
       ASyntax,
       Compiler,
-      WCompiler,
-      Helper
+      WCompiler
       
   hs-source-dirs:
       src
