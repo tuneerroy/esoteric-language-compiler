@@ -7,7 +7,7 @@ import Test.QuickCheck (Property)
 import Test.QuickCheck qualified as QC
 import WStepper (MonadReadWrite (..), WError (..), runProgram, runProgramIO)
 import WSyntax (WInstruction (..), WBop (..))
-import WArbPrograms ( NEStackProg(..), stackVerify, StackProg(..) )
+import WArbPrograms
 
 -- | ReadWrite plug-ins for testing
 
@@ -17,28 +17,25 @@ instance MonadReadWrite Identity where
   writeString :: String -> Identity ()
   writeString = error "No writeString for identity"
 
-prop_emptyStackError :: StackProg -> Property
-prop_emptyStackError (StackProg instrs) = case err of
+prop_verifyEmptyStack :: [WInstruction Int] -> Property
+prop_verifyEmptyStack instrs = case err of
   Left ValStackEmpty -> QC.collect ValStackEmpty $ not $ stackVerify instrs
   Left _ -> QC.property QC.Discard
   Right () -> QC.collect "success" $ QC.property $ stackVerify instrs
   where
     Identity err = runProgram $ listToArray instrs
 
-prop_nonemptyStackNoError :: NEStackProg -> Property
-prop_nonemptyStackNoError program = case err of
+prop_validateNonemptyStack :: [WInstruction Int] -> Property
+prop_validateNonemptyStack instrs = case err of
   Left ValStackEmpty -> QC.collect ValStackEmpty False
   Left _ -> QC.property QC.Discard
   Right () -> QC.collect "success" $ QC.property True
   where
-    NEStackProg instrs = program
     Identity err = runProgram $ listToArray instrs
-
-
 
 qc :: IO ()
 qc = do
   putStrLn "prop_EmptyStackError"
-  QC.quickCheck prop_emptyStackError
+  QC.quickCheck $ QC.forAll (programOf smallStackInstr) prop_verifyEmptyStack
   putStrLn "prop_NonEmptyStackNoError"
-  QC.quickCheck prop_nonemptyStackNoError
+  QC.quickCheck $ QC.forAll (stackValidate <$> programOf smallStackInstr) prop_validateNonemptyStack

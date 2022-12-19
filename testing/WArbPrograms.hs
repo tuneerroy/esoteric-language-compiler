@@ -7,6 +7,7 @@ import Test.QuickCheck qualified as QC
 import Test.QuickCheck.Arbitrary (Arbitrary)
 import Test.QuickCheck.Gen (Gen)
 import WSyntax (WInstruction (..))
+import NonNeg (NonNeg)
 
 -- | Quickcheck tests
 numPops :: WInstruction l -> Int
@@ -52,31 +53,20 @@ numPushes Retrieve = 1
 class InstructionSet a where
     unpack :: a -> WInstruction Int
 
--- | Instructions that modify the stack, and do nothing else
-newtype StackInstr = StackInstr (WInstruction Int)
-  deriving (Eq, Show)
-
-instance InstructionSet StackInstr where
-    unpack :: StackInstr -> WInstruction Int
-    unpack (StackInstr instr) = instr
-
-instance Arbitrary StackInstr where
-  arbitrary :: Gen StackInstr
-  arbitrary =
-    StackInstr
-      <$> QC.oneof
-        [ Push <$> arbitrary,
-          pure Dup,
-          pure Swap,
-          pure Discard,
-          Copy <$> arbitrary,
-          Slide <$> arbitrary,
-          Arith <$> arbitrary
+smallStackInstr :: Gen (WInstruction l)
+smallStackInstr = QC.frequency
+        [ (3, Push <$> arbitrary),
+          (1, pure Dup),
+          (1, pure Swap),
+          (1, pure Discard),
+          (1, Copy <$> arbitrary),
+          (1, Slide <$> arbitrary),
+          (1, Arith <$> arbitrary)
         ]
-  shrink :: StackInstr -> [StackInstr]
-  shrink = const []
 
--- | Verify that a program should not throw a stack empty error
+programOf :: Gen (WInstruction l) -> Gen [WInstruction l]
+programOf gen = (++ [End]) <$> QC.listOf gen
+
 stackVerify :: [WInstruction l] -> Bool
 stackVerify = aux 0
   where
@@ -86,54 +76,15 @@ stackVerify = aux 0
       let stackHeight' = stackHeight - numPops x
       stackHeight' >= 0 && aux (stackHeight' + numPushes x) xs
 
--- | A program that has only stack modification instructions
-newtype StackProg = StackProg [WInstruction Int] deriving (Show)
-
-instance Arbitrary StackProg where
-    arbitrary :: Gen StackProg
-    arbitrary = do
-        instructionList <- map (\(StackInstr instr) -> instr)
-            <$> QC.listOf (arbitrary :: Gen StackInstr)
-        return (StackProg (instructionList ++ [End]))
-
--- | A program with only stack modification instructions that doesn't throw
--- | any empty stack errors
-newtype NEStackProg = NEStackProg [WInstruction Int] deriving (Show)
-
 stackValidate :: [WInstruction l] -> [WInstruction l]
-stackValidate l = evalState (mAvoidEmptyStack l) 0
+stackValidate l = evalState (mStackValidate l) 0
   where
-    mAvoidEmptyStack :: [WInstruction l] -> State Int [WInstruction l]
-    mAvoidEmptyStack (x : xs) = do
+    mStackValidate :: [WInstruction l] -> State Int [WInstruction l]
+    mStackValidate (x : xs) = do
       stackHeight <- get
       if numPops x <= stackHeight
         then do
           put (stackHeight - numPops x + numPushes x)
-          (x :) <$> mAvoidEmptyStack xs
-        else mAvoidEmptyStack xs
-    mAvoidEmptyStack [] = return []
-
-shrinkList :: Arbitrary a => [a] -> [[a]]
-shrinkList = shrink
-
-instance Arbitrary NEStackProg where
-  arbitrary :: Gen NEStackProg
-  arbitrary = do
-    instructionList <- QC.listOf simpleInstruction
-    return $ NEStackProg (stackValidate instructionList ++ [End])
-    where
-      simpleInstruction =
-        QC.frequency
-          [ (3, Push <$> arbitrary),
-            (1, pure Dup),
-            (1, pure Swap),
-            (1, pure Discard),
-            (1, Copy <$> genSmallNonNeg),
-            (1, Slide <$> genSmallNonNeg),
-            (1, Arith <$> arbitrary)
-          ]
-        where
-          genSmallNonNeg = toEnum <$> QC.chooseInt (0, 5)
-
-      shrink (NEStackProg instrs) =
-        NEStackProg . (++ [End]) <$> shrinkList (init instrs)
+          (x :) <$> mStackValidate xs
+        else mStackValidate xs
+    mStackValidate [] = return []
