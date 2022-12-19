@@ -43,6 +43,7 @@ data WError
   | CallStackEmpty
   | HeapKeyNotFound
   | LabelFound
+  | DivideByZero
   deriving (Eq, Show)
 
 toProgramState :: forall m. (ProgramState WStore m, MonadReadWrite m, MonadError WError m) => Program WInstruction -> m ()
@@ -82,18 +83,21 @@ toProgramState program = do
       push n
     Slide n -> do
       top <- pop
-      forM_ [0 .. fromEnum n] $ const pop
+      forM_ [1 .. fromEnum n] $ const pop
       push top
     Arith wb -> do
       b <- pop
       a <- pop
-      let op = case wb of
-            Add -> (+)
-            Sub -> (-)
-            Mul -> (*)
-            Div -> div
-            Mod -> mod
-      push $ op a b
+      if wb == Div && b == 0 then
+        throwError DivideByZero
+      else do
+        let op = case wb of
+              Add -> (+)
+              Sub -> (-)
+              Mul -> (*)
+              Div -> div
+              Mod -> mod
+        push $ op a b
     Label n -> throwError LabelFound
     Call n -> put (store & callStack %~ (pc :), n)
     Branch wc n -> do
