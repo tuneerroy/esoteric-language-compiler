@@ -37,7 +37,7 @@ data BError = MissingMatchingBracket | ProgramOutOfBounds
 
 runProgram :: forall m. (MonadState BStore m, MonadReadWrite m, MonadError BError m) => [BInstruction] -> m ()
 runProgram [] = return ()
-runProgram (instr : instrs) = do
+runProgram program@(instr : instrs) = do
   store <- get
   case instr of
     IncrPtr -> do
@@ -62,7 +62,7 @@ runProgram (instr : instrs) = do
     While s -> do
       case Map.findWithDefault 0 (_ptr store) (_heap store) of
         0 -> runProgram instrs
-        _ -> runProgram (s ++ instrs)
+        _ -> runProgram (s ++ program)
   where
     adjustByte :: (Word8 -> Word8) -> Maybe Word8 -> Maybe Word8
     adjustByte f x = Just $ fromMaybe 0 x & f
