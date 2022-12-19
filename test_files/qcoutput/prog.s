@@ -123,15 +123,58 @@ mov x30, x22
 ret
 _start:
 // push
-mov x0, #11
+mov x0, #-1
+str x0, [sp, #-16]!
+// retrieve
+ldr x1, [sp], #16
+adrp x2, heap@page
+add x2, x2, heap@pageoff
+ldr x0, [x2, x1]
 str x0, [sp, #-16]!
 // push
-mov x0, #2
+mov x0, #4
 str x0, [sp, #-16]!
+// push
+mov x0, #4
+str x0, [sp, #-16]!
+// store
+ldr x0, [sp], #16
+ldr x1, [sp], #16
+adrp x2, heap@page
+add x2, x2, heap@pageoff
+str x0, [x2, x1]
 // outputNum
 bl _output_num
-// outputNum
-bl _output_num
+// push
+mov x0, #3
+str x0, [sp, #-16]!
+// push
+mov x0, #-1
+str x0, [sp, #-16]!
+// push
+mov x0, #4
+str x0, [sp, #-16]!
+// retrieve
+ldr x1, [sp], #16
+adrp x2, heap@page
+add x2, x2, heap@pageoff
+ldr x0, [x2, x1]
+str x0, [sp, #-16]!
+// retrieve
+ldr x1, [sp], #16
+adrp x2, heap@page
+add x2, x2, heap@pageoff
+ldr x0, [x2, x1]
+str x0, [sp, #-16]!
+// retrieve
+ldr x1, [sp], #16
+adrp x2, heap@page
+add x2, x2, heap@pageoff
+ldr x0, [x2, x1]
+str x0, [sp, #-16]!
+// push
+mov x0, #-2
+str x0, [sp, #-16]!
 // end
 b end
 end:

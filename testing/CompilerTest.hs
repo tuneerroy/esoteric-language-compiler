@@ -15,11 +15,11 @@ import Test.QuickCheck qualified as QC
 import Test.QuickCheck.Gen (Gen)
 import Test.QuickCheck.Monadic qualified as QC
 import Test.QuickCheck.Property qualified as QC
-import WArbPrograms (validOutputProgram)
+import WArbPrograms (validHeapAndOutputProgram, validOutputProgram)
 import WCompiler (compileProgram)
 import WParser (WCommand)
 import WParserTest qualified
-import WStepper (MonadReadWrite (readChar, writeString), WError (ValStackEmpty), execProgram, initState)
+import WStepper (WError (ValStackEmpty), execProgram, initState)
 import WSyntax (WInstruction (..))
 
 progFile :: FilePath
@@ -100,4 +100,4 @@ prop_model commands = QC.monadicIO $ do
 qc :: IO ()
 qc = do
   putStrLn "Prop Model"
-  QC.quickCheck $ QC.forAll validOutputProgram prop_model
+  QC.quickCheck $ QC.forAll validHeapAndOutputProgram prop_model

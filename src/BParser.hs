@@ -5,7 +5,7 @@ import Control.Applicative (Alternative (many))
 import Data.Foldable (asum)
 import Data.Functor (($>))
 import Data.Maybe (mapMaybe)
-import Parser (Parser, eof, parse, parseFromFile, token, tokens)
+import Parser (Parser, constPTok, eof, parse, parseFromFile, token, tokens)
 
 data Token
   = Geq
@@ -35,11 +35,8 @@ parseToken _ = Nothing
 tokenize :: String -> [Token]
 tokenize = mapMaybe parseToken
 
-constPTok :: Token -> a -> BParser a
-constPTok t = (token t $>)
-
-commandB :: BParser BInstruction
-commandB =
+command :: BParser BInstruction
+command =
   asum $
     whileParser :
     ( uncurry constPTok
@@ -53,13 +50,13 @@ commandB =
     )
   where
     whileParser :: BParser BInstruction
-    whileParser = While <$> (token LBracket *> many commandB <* token RBracket)
+    whileParser = While <$> (token LBracket *> many command <* token RBracket)
 
-blockB :: BParser [BInstruction]
-blockB = many commandB <* eof
+block :: BParser [BInstruction]
+block = many command <* eof
 
-bParseTokens :: [Token] -> Maybe [BInstruction]
-bParseTokens = parse blockB
+parseTokens :: [Token] -> Maybe [BInstruction]
+parseTokens = parse block
 
-bParseString :: String -> Maybe [BInstruction]
-bParseString = bParseTokens . tokenize
+parseString :: String -> Maybe [BInstruction]
+parseString = parseTokens . tokenize

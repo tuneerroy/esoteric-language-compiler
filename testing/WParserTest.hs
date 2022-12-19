@@ -14,7 +14,7 @@ import Test.QuickCheck
     quickCheck,
     suchThat,
   )
-import WParser (Token (..), WCommand, WLabel (..), wParseString, wParseTokens)
+import WParser (Token (..), WCommand, WLabel (..), parseString, parseTokens)
 import WSyntax
   ( WBop (..),
     WCond (..),
@@ -73,7 +73,7 @@ blockToTokens :: [WCommand] -> [Token]
 blockToTokens = concatMap commandToTokens
 
 prop_roundtrip_tokens :: [WCommand] -> Bool
-prop_roundtrip_tokens cs = case wParseTokens $ blockToTokens cs of
+prop_roundtrip_tokens cs = case parseTokens $ blockToTokens cs of
   Nothing -> False
   Just parseResult -> cs == parseResult
 
@@ -106,7 +106,7 @@ instance Arbitrary WProgramString where
         oneof [(c :) <$> mixGarbage cs, (:) <$> garbageChar <*> mixGarbage s]
 
 prop_program_parse :: WProgramString -> Bool
-prop_program_parse (WP s) = not . null $ wParseString s
+prop_program_parse (WP s) = (not . null . parseString) s
 
 qc :: IO ()
 qc = do

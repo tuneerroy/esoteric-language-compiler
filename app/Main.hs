@@ -4,13 +4,13 @@ import ASyntax (toArm64String)
 -- import Compiler (compileProgram)
 
 import BCompiler (compileProgram)
-import BParser (bParseString)
+import BParser (parseString)
 import Control.Monad (void, when)
 import Data.List (intercalate)
 import Data.Maybe (fromMaybe)
 import Text.Read (readMaybe)
 import WCompiler (compileProgram)
-import WParser (wParseString)
+import WParser (parseString)
 
 main :: IO ()
 main = do
@@ -42,14 +42,14 @@ tryOFileConversion _ = Nothing
 
 -- compile :: String -> Maybe String
 -- compile s = do
---   commands <- wParseString s
+--   commands <- parseString s
 --   return (intercalate "\n" $ compileProgram commands)
 
 compile :: String -> Maybe String
 compile s = do
-  commands <- wParseString s
+  commands <- WParser.parseString s
   let assembly = WCompiler.compileProgram commands
-  -- commands <- bParseString s
+  -- commands <- BParser.parseString s
   -- let assembly = BCompiler.compileProgram commands
   let assemblyStr = map toArm64String assembly
   return (intercalate "\n" assemblyStr)

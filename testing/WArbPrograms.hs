@@ -2,6 +2,7 @@
 module WArbPrograms where
 
 import Control.Applicative (Applicative (liftA2))
+import Control.Monad (guard)
 import Control.Monad.State.Lazy (MonadState (..), State, evalState)
 import NonNeg (NonNeg)
 import Test.QuickCheck (Arbitrary (..), Property)
@@ -80,14 +81,15 @@ programOf gen = (++ [End]) <$> QC.listOf gen
 stackProgram :: Gen [WInstruction l]
 stackProgram = programOf smallStackInstr
 
-stackVerify :: [WInstruction l] -> Bool
+stackVerify :: [WInstruction l] -> Maybe Int
 stackVerify = aux 0
   where
-    aux :: Int -> [WInstruction l] -> Bool
-    aux _ [] = True
+    aux :: Int -> [WInstruction l] -> Maybe Int
+    aux stackHeight [] = return stackHeight
     aux stackHeight (x : xs) = do
       let stackHeight' = stackHeight - numPops x
-      stackHeight' >= 0 && aux (stackHeight' + numPushes x) xs
+      guard (stackHeight' >= 0)
+      aux (stackHeight' + numPushes x) xs
 
 stackValidate :: [WInstruction l] -> [WInstruction l]
 stackValidate l = evalState (mStackValidate l) 0
@@ -134,3 +136,29 @@ validInputProgram =
             (3, inputInstr)
           ]
       )
+
+sprinkleHeap :: Gen (WInstruction l) -> Gen [WInstruction l]
+sprinkleHeap gen = do
+  begin <- QC.listOf gen
+  (addr :: Int) <- arbitrary
+  (val :: Int) <- arbitrary
+  let storeInstrs = [Push addr, Push val, Store]
+  middle <- QC.listOf gen
+  let loadInstrs = [Push addr, Retrieve]
+  end <- QC.listOf gen
+  return $ begin <> storeInstrs <> middle <> loadInstrs <> end
+
+heapInstr :: Gen (WInstruction l)
+heapInstr = QC.elements [Store, Retrieve]
+
+validHeapAndOutputProgram :: Gen [WInstruction l]
+validHeapAndOutputProgram = (<> [End]) . stackValidate <$> sprinkleHeap gen
+  where
+    gen :: Gen (WInstruction l)
+    gen =
+      QC.frequency
+        [ (5, Push <$> arbitrary),
+          (1, smallStackInstr),
+          (1, outputInstr),
+          (2, heapInstr)
+        ]

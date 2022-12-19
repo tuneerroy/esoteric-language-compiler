@@ -7,7 +7,7 @@ import Data.Functor (($>))
 import Data.List (foldl', intercalate)
 import Data.List.NonEmpty (NonEmpty, nonEmpty)
 import Data.Maybe (mapMaybe)
-import Parser (Parser, eof, parse, parseFromFile, token, tokens)
+import Parser (Parser, constP, constPTok, eof, parse, parseFromFile, token, tokens)
 import WSyntax (WBop (..), WCond (..), WInstruction (..))
 
 data Token = Space | Tab | LF deriving (Eq, Show, Ord)
@@ -28,12 +28,6 @@ parseToken _ = Nothing
 tokenize :: String -> [Token]
 tokenize = mapMaybe parseToken
 
-constPTok :: Token -> a -> WParser a
-constPTok t = (token t $>)
-
-constP :: [Token] -> a -> WParser a
-constP ts = (tokens ts $>)
-
 numberP :: WParser Int
 numberP =
   (constPTok Tab negate <|> constPTok Space id)
@@ -45,8 +39,8 @@ numberP =
 labelP :: WParser WLabel
 labelP = WLabel <$> (some (token Space <|> token Tab) <* token LF >>= lift . nonEmpty)
 
-commandP :: WParser WCommand
-commandP = asum [ioP, stackP, arithP, flowP, heapP]
+command :: WParser WCommand
+command = asum [ioP, stackP, arithP, flowP, heapP]
   where
     ioP :: WParser WCommand
     ioP =
@@ -99,12 +93,11 @@ commandP = asum [ioP, stackP, arithP, flowP, heapP]
                <|> constPTok Tab Retrieve
            )
 
-blockP :: WParser [WCommand]
--- blockP = many (commandP <* token LF <|> commandP)
-blockP = many commandP <* eof
+block :: WParser [WCommand]
+block = many command <* eof
 
-wParseTokens :: [Token] -> Maybe [WCommand]
-wParseTokens = parse blockP
+parseTokens :: [Token] -> Maybe [WCommand]
+parseTokens = parse block
 
-wParseString :: String -> Maybe [WCommand]
-wParseString = wParseTokens . tokenize
+parseString :: String -> Maybe [WCommand]
+parseString = parseTokens . tokenize

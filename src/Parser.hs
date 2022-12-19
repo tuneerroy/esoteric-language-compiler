@@ -2,9 +2,12 @@
 
 module Parser where
 
+import Control.Applicative
 import Control.Monad (guard)
 import Control.Monad.Cont (MonadTrans (lift))
 import Control.Monad.State (StateT (StateT), evalStateT, lift, runStateT)
+import Data.Functor (($>))
+import Data.Maybe (mapMaybe)
 import System.IO qualified as IO
 import System.IO.Error qualified as IO
 import Prelude hiding (filter)
@@ -45,6 +48,14 @@ token t = satisfy (t ==)
 -- | Parses and returns the specified string
 tokens :: Eq t => [t] -> Parser t [t]
 tokens = foldr (\t p -> (:) <$> token t <*> p) (pure [])
+
+-- | TODO: write
+constPTok :: Eq t => t -> a -> Parser t a
+constPTok t = (token t $>)
+
+-- | TODO: write
+constP :: Eq t => [t] -> a -> Parser t a
+constP ts = (tokens ts $>)
 
 -- | Run the parser
 parse :: Parser t a -> [t] -> Maybe a

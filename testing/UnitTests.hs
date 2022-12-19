@@ -3,20 +3,23 @@ module UnitTests where
 import ASyntax (AInstruction, instructionsToStrings)
 import BCompiler qualified
 import BParser qualified
+import BStepper (execProgram, BStore)
 import BStepper qualified
 import BSyntax (BInstruction)
 import Control.Monad (forM_)
 import Data.Foldable (sequenceA_)
 import Data.Function ((&))
-import FakeIO (outputOf)
+import Data.Functor (void)
+import FakeIO (outputOf, FakeIO)
 import Program (listToArray, mkProgram)
-import System.Process (createProcess, shell, waitForProcess)
+import System.Process (createProcess, getPid, shell, waitForProcess)
 import Test.HUnit (Test)
 import Test.HUnit.Base (assert)
 import WCompiler (compileProgram)
-import WParser (WCommand, wParseString)
+import WParser (WCommand, parseString)
 import WStepper (execProgram)
 import WSyntax ()
+import Data.Functor.Identity (Identity(..))
 
 -- take in filename (including directory)
 -- read in the data, hold in string
@@ -65,6 +68,19 @@ createUnitTest dir ext args lang = do
           putStr $ "Actual: <>" ++ actual ++ "<>\n"
           assert $ expected == actual
 
+runScript ::
+  String -> IO ()
+runScript s = do
+  (_, _, _, handle) <- s & shell & createProcess
+  waitForProcess handle
+  pid <- getPid handle
+  case pid of
+    Nothing -> return ()
+    Just cp -> do
+      (_, _, _, handle') <- "kill -INT " ++ show cp & shell & createProcess
+      void $ waitForProcess handle'
+  return ()
+
 wsFilePath :: String
 wsFilePath = "test_files/ws/"
 
@@ -111,20 +127,61 @@ testWS1To100 =
     ""
     wLanguage
 
-testTruthMachine :: IO ()
-testTruthMachine =
+testWSTruthMachine :: IO ()
+testWSTruthMachine =
   createUnitTest
     (wsFilePath ++ "truthmachine")
     "ws"
     ""
     wLanguage
 
-runScript ::
-  String -> IO ()
-runScript s = do
-  (_, _, _, handle) <- s & shell & createProcess
-  waitForProcess handle
-  return ()
+testBFBSort :: IO ()
+testBFBSort =
+  createUnitTest
+    (bfFilePath ++ "bsort")
+    "b"
+    ""
+    bLanguage
+
+testBFFactorial :: IO ()
+testBFFactorial =
+  createUnitTest
+    (bfFilePath ++ "factorial")
+    "b"
+    ""
+    bLanguage
+
+testBFHead :: IO ()
+testBFHead =
+  createUnitTest
+    (bfFilePath ++ "head")
+    "b"
+    ""
+    bLanguage
+
+testBFIsort :: IO ()
+testBFIsort =
+  createUnitTest
+    (bfFilePath ++ "isort")
+    "b"
+    ""
+    bLanguage
+
+testBFQsort :: IO ()
+testBFQsort =
+  createUnitTest
+    (bfFilePath ++ "qsort")
+    "b"
+    ""
+    bLanguage
+
+testBFSquares :: IO ()
+testBFSquares =
+  createUnitTest
+    (bfFilePath ++ "squares")
+    "b"
+    ""
+    bLanguage
 
 data Language a = Language
   { parse :: String -> Maybe [a],
@@ -133,20 +190,22 @@ data Language a = Language
   }
 
 wLanguage :: Language WCommand
-wLanguage = Language WParser.wParseString wInterpreter WCompiler.compileProgram
+wLanguage = Language WParser.parseString wInterpreter WCompiler.compileProgram
 
 wInterpreter :: [WCommand] -> String -> Maybe String
 wInterpreter commands inputs = do
   instrs <- mkProgram commands
-  case outputOf (execProgram instrs) inputs of
+  case outputOf (WStepper.execProgram instrs) inputs of
     Left err -> Nothing
     Right s -> Just s
 
 bLanguage :: Language BInstruction
-bLanguage = Language BParser.bParseString bInterpreter BCompiler.compileProgram
+bLanguage = Language BParser.parseString bInterpreter BCompiler.compileProgram
 
 bInterpreter :: [BInstruction] -> String -> Maybe String
-bInterpreter = undefined
+bInterpreter instrs inputs = undefined where
+  x :: FakeIO BStore = BStepper.execProgram instrs
+  --let Identity s = outputOf (Identity <$> BStepper.execProgram instrs) inputs in Just s
 
 main :: IO ()
 main =
@@ -156,5 +215,5 @@ main =
       testWSCat,
       testWSDivDoub,
       testWS1To100,
-      testTruthMachine
+      testWSTruthMachine
     ]

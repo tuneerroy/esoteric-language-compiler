@@ -1,9 +1,9 @@
-module FakeIO (outputOf, finalStateOf, FakeState (..)) where
+module FakeIO (outputOf, finalStateOf, FakeState (..), FakeIO) where
 
 import Control.Monad (ap, liftM)
 import Data.Sequence (Seq, (|>))
 import Data.Sequence qualified as Seq
-import WStepper (MonadReadWrite (..))
+import MonadReadWrite (MonadReadWrite (..))
 
 -- A copy of the state monad to prevent typeclass interference
 newtype State' s a = S (s -> (a, s))
@@ -67,12 +67,12 @@ instance MonadReadWrite FakeIO where
 ofInput :: String -> FakeState
 ofInput = flip FakeState id
 
-outputOf :: FakeIO (Either e s) -> String -> Either e String
+outputOf :: Monad m => FakeIO (m s) -> String -> m String
 outputOf fakeIO input = e >> return (output state [])
   where
     (e, state) = runState' fakeIO (ofInput input)
 
-finalStateOf :: FakeIO (Either e s) -> String -> Either e s
+finalStateOf :: Monad m => FakeIO (m s) -> String -> m s
 finalStateOf fakeIO input = e
   where
     (e, state) = runState' fakeIO (ofInput input)
