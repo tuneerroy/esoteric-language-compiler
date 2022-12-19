@@ -1,9 +1,11 @@
-module BCompiler where
+module BCompiler (compileProgram) where
 
 import ASyntax (AInstruction (..), BranchCond (..), Reg32 (..), Reg64 (..))
 import BSyntax (BInstruction (..))
-import Data.List (intercalate)
 
+-- Compiles a BInstruction and a string index to our assembly syntax
+-- The index is to distinguish between labels for the current instruction
+-- versus the same instruction that occurs later in the program
 compileCommand :: (BInstruction, String) -> [AInstruction]
 compileCommand (ins, idx) = case ins of
   IncrPtr ->
@@ -62,6 +64,7 @@ compileCommand (ins, idx) = case ins of
       f :: Int -> String
       f n = idx ++ "." ++ show n
 
+-- Data directives and subroutines we may use in every program
 header :: [AInstruction]
 header =
   [ Directive "data",

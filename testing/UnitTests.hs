@@ -73,6 +73,21 @@ createUnitTest dir ext args lang = do
           putStr $ "Actual: <>" ++ actual ++ "<>\n"
           assert $ expected == actual
 
+debugWS :: String -> String -> IO ()
+debugWS dir args = do
+  let totalPath = dir ++ "/program"
+  programString <- readFile (totalPath ++ ".ws")
+
+  let program = case WParser.parseString programString >>= mkProgram of
+        Nothing -> error "Failed to make program"
+        Just x -> x
+
+  let res = outputOf (WStepper.execProgram program) args
+
+  print res
+
+  return ()
+
 runScript ::
   String -> IO ()
 runScript s = do
@@ -116,15 +131,16 @@ testWSCat =
     "gema kgk aem134 45 523fekma"
     wLanguage
 
-testWSDivDoub :: IO ()
-testWSDivDoub =
+testWS99Bottles :: IO ()
+testWS99Bottles =
   createUnitTest
-    (wsFilePath ++ "divdoub")
+    (wsFilePath ++ "99bottles")
     "ws"
-    "18"
+    "5"
     wLanguage
 
 testWSFib :: IO ()
+-- testWSFib = debugWS (wsFilePath ++ "fib") "10"
 testWSFib =
   createUnitTest
     (wsFilePath ++ "fib")
@@ -234,7 +250,6 @@ main =
     [ testWSHelloWorld,
       testWSAsterikGrid,
       testWSCat,
-      testWSDivDoub,
       testWS1To100,
       testWSTruthMachine
     ]

@@ -49,11 +49,11 @@ token t = satisfy (t ==)
 tokens :: Eq t => [t] -> Parser t [t]
 tokens = foldr (\t p -> (:) <$> token t <*> p) (pure [])
 
--- | TODO: write
+-- | Consumes a token, and outputs a constant value
 constPTok :: Eq t => t -> a -> Parser t a
 constPTok t = (token t $>)
 
--- | TODO: write
+-- | Consumes a string of tokens, and outputs a constant value
 constP :: Eq t => [t] -> a -> Parser t a
 constP ts = (tokens ts $>)
 
@@ -61,11 +61,13 @@ constP ts = (tokens ts $>)
 parse :: Parser t a -> [t] -> Maybe a
 parse = evalStateT
 
+-- | Run the parser, outputing an either
 parseToEither :: Parser t a -> [t] -> Either String a
 parseToEither p s = case parse p s of
   Just x -> Right x
   Nothing -> Left "No parses"
 
+-- | Run the parser on a file input
 parseFromFile :: Parser Char a -> FilePath -> IO (Either String a)
 parseFromFile parser filename = do
   IO.catchIOError

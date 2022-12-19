@@ -2,12 +2,12 @@
 .balign 4
 buf: .space 20, 0
 .balign 4
-heap: .space 1000000, 0
+heap: .space 10000000, 0
 .text
 .global _start
 .balign 16
 _divide:
-udiv x2, x0, x1
+sdiv x2, x0, x1
 msub x3, x2, x1, x0
 ret
 _output_char:
@@ -123,16 +123,235 @@ mov x30, x22
 ret
 _start:
 // push
-mov x0, #-103
+mov x0, #5
 str x0, [sp, #-16]!
 // push
-mov x0, #55
+mov x0, #6
 str x0, [sp, #-16]!
-// div
-ldr x1, [sp], #16
+// push
+mov x0, #3
+str x0, [sp, #-16]!
+// push
+mov x0, #9
+str x0, [sp, #-16]!
+// store
 ldr x0, [sp], #16
-bl _divide
-str x2, [sp, #-16]!
+ldr x1, [sp], #16
+mov x3, #8
+adrp x2, heap@page
+add x2, x2, heap@pageoff
+mul x1, x1, x3
+str x0, [x2, x1]
+// retrieve
+ldr x1, [sp], #16
+mov x3, #8
+mul x1, x1, x3
+adrp x2, heap@page
+add x2, x2, heap@pageoff
+ldr x0, [x2, x1]
+str x0, [sp, #-16]!
+// store
+ldr x0, [sp], #16
+ldr x1, [sp], #16
+mov x3, #8
+adrp x2, heap@page
+add x2, x2, heap@pageoff
+mul x1, x1, x3
+str x0, [x2, x1]
+// push
+mov x0, #3
+str x0, [sp, #-16]!
+// push
+mov x0, #17
+str x0, [sp, #-16]!
+// push
+mov x0, #24
+str x0, [sp, #-16]!
+// store
+ldr x0, [sp], #16
+ldr x1, [sp], #16
+mov x3, #8
+adrp x2, heap@page
+add x2, x2, heap@pageoff
+mul x1, x1, x3
+str x0, [x2, x1]
+// dup
+ldr x0, [sp], #16
+str x0, [sp, #-16]!
+str x0, [sp, #-16]!
+// outputNum
+bl _output_num
+// outputNum
+bl _output_num
+// push
+mov x0, #0
+str x0, [sp, #-16]!
+// push
+mov x0, #4
+str x0, [sp, #-16]!
+// push
+mov x0, #0
+str x0, [sp, #-16]!
+// swap
+ldr x0, [sp], #16
+ldr x1, [sp], #16
+str x0, [sp, #-16]!
+str x1, [sp, #-16]!
+// store
+ldr x0, [sp], #16
+ldr x1, [sp], #16
+mov x3, #8
+adrp x2, heap@page
+add x2, x2, heap@pageoff
+mul x1, x1, x3
+str x0, [x2, x1]
+// push
+mov x0, #1
+str x0, [sp, #-16]!
+// push
+mov x0, #5
+str x0, [sp, #-16]!
+// push
+mov x0, #2
+str x0, [sp, #-16]!
+// retrieve
+ldr x1, [sp], #16
+mov x3, #8
+mul x1, x1, x3
+adrp x2, heap@page
+add x2, x2, heap@pageoff
+ldr x0, [x2, x1]
+str x0, [sp, #-16]!
+// store
+ldr x0, [sp], #16
+ldr x1, [sp], #16
+mov x3, #8
+adrp x2, heap@page
+add x2, x2, heap@pageoff
+mul x1, x1, x3
+str x0, [x2, x1]
+// retrieve
+ldr x1, [sp], #16
+mov x3, #8
+mul x1, x1, x3
+adrp x2, heap@page
+add x2, x2, heap@pageoff
+ldr x0, [x2, x1]
+str x0, [sp, #-16]!
+// store
+ldr x0, [sp], #16
+ldr x1, [sp], #16
+mov x3, #8
+adrp x2, heap@page
+add x2, x2, heap@pageoff
+mul x1, x1, x3
+str x0, [x2, x1]
+// push
+mov x0, #5
+str x0, [sp, #-16]!
+// outputNum
+bl _output_num
+// push
+mov x0, #6
+str x0, [sp, #-16]!
+// outputNum
+bl _output_num
+// push
+mov x0, #8
+str x0, [sp, #-16]!
+// outputNum
+bl _output_num
+// push
+mov x0, #4
+str x0, [sp, #-16]!
+// outputNum
+bl _output_num
+// push
+mov x0, #4
+str x0, [sp, #-16]!
+// outputNum
+bl _output_num
+// push
+mov x0, #7
+str x0, [sp, #-16]!
+// push
+mov x0, #3
+str x0, [sp, #-16]!
+// outputNum
+bl _output_num
+// push
+mov x0, #8
+str x0, [sp, #-16]!
+// store
+ldr x0, [sp], #16
+ldr x1, [sp], #16
+mov x3, #8
+adrp x2, heap@page
+add x2, x2, heap@pageoff
+mul x1, x1, x3
+str x0, [x2, x1]
+// push
+mov x0, #7
+str x0, [sp, #-16]!
+// push
+mov x0, #5
+str x0, [sp, #-16]!
+// push
+mov x0, #5
+str x0, [sp, #-16]!
+// push
+mov x0, #4
+str x0, [sp, #-16]!
+// push
+mov x0, #17
+str x0, [sp, #-16]!
+// retrieve
+ldr x1, [sp], #16
+mov x3, #8
+mul x1, x1, x3
+adrp x2, heap@page
+add x2, x2, heap@pageoff
+ldr x0, [x2, x1]
+str x0, [sp, #-16]!
+// push
+mov x0, #7
+str x0, [sp, #-16]!
+// copy
+ldr x0, [sp, #48]
+str x0, [sp, #-16]!
+// push
+mov x0, #4
+str x0, [sp, #-16]!
+// push
+mov x0, #4
+str x0, [sp, #-16]!
+// push
+mov x0, #5
+str x0, [sp, #-16]!
+// outputNum
+bl _output_num
+// push
+mov x0, #8
+str x0, [sp, #-16]!
+// store
+ldr x0, [sp], #16
+ldr x1, [sp], #16
+mov x3, #8
+adrp x2, heap@page
+add x2, x2, heap@pageoff
+mul x1, x1, x3
+str x0, [x2, x1]
+// retrieve
+ldr x1, [sp], #16
+mov x3, #8
+mul x1, x1, x3
+adrp x2, heap@page
+add x2, x2, heap@pageoff
+ldr x0, [x2, x1]
+str x0, [sp, #-16]!
+// push
+mov x0, #6
+str x0, [sp, #-16]!
 // end
 b end
 end:

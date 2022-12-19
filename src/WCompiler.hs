@@ -1,11 +1,10 @@
-module WCompiler where
+module WCompiler (compileProgram) where
 
 import ASyntax (AInstruction (..), BranchCond (..), Reg32 (..), Reg64 (..))
 import WParser (Token (..), WLabel (..))
 import WSyntax (WBop (..), WCond (Neg, Zero), WInstruction (..))
 
--- TODO: maybe make this a type class?
-
+-- Compiles a single whitespace command to a list of assembly instructions
 compileCommand :: (Eq a, NonWhitespaceShow a) => WInstruction a -> [AInstruction]
 compileCommand i = case i of
   InputChar ->
@@ -17,7 +16,6 @@ compileCommand i = case i of
       MovI (Reg 16) 3,
       Svc,
       Ldr (Reg 0) (Reg 26) 0,
-      -- Ldr (Reg 1) SP 0, CONSUME
       Ldr (Reg 1) SP 16,
       GetAddress (Reg 2) "heap",
       MovI (Reg 3) 8,
@@ -117,14 +115,12 @@ compileCommand i = case i of
     ]
   Branch Zero a ->
     [ Comment "branch zero",
-      -- Ldr (Reg 0) SP 0, CONSUME
       Ldr (Reg 0) SP 16,
       Cmp (Reg 0) 0,
       B ASyntax.EQ (toString a)
     ]
   Branch Neg a ->
     [ Comment "branch neg",
-      -- Ldr (Reg 0) SP 0, CONSUME
       Ldr (Reg 0) SP 16,
       Cmp (Reg 0) 0,
       B ASyntax.LT (toString a)
@@ -141,28 +137,29 @@ compileCommand i = case i of
     [ Comment "store",
       Ldr (Reg 0) SP 16,
       Ldr (Reg 1) SP 16,
-      MovI (Reg 3) 8, -- ADDED
+      MovI (Reg 3) 8,
       GetAddress (Reg 2) "heap",
-      AMul (Reg 1) (Reg 1) (Reg 3), -- ADDED
+      AMul (Reg 1) (Reg 1) (Reg 3),
       StrO (Reg 0) (Reg 2) (Reg 1)
     ]
   Retrieve ->
     [ Comment "retrieve",
       Ldr (Reg 1) SP 16,
-      MovI (Reg 3) 8, -- ADDED
-      AMul (Reg 1) (Reg 1) (Reg 3), -- ADDED
+      MovI (Reg 3) 8,
+      AMul (Reg 1) (Reg 1) (Reg 3),
       GetAddress (Reg 2) "heap",
       LdrO (Reg 0) (Reg 2) (Reg 1),
       Psh (Reg 0)
     ]
 
+-- Data directives and subroutines we may use in every program
 header :: [AInstruction]
 header =
   [ Directive "data",
     Balign 4,
     Allocate "buf" 20,
     Balign 4,
-    Allocate "heap" 1000000,
+    Allocate "heap" 10000000,
     Directive "text",
     Global "_start",
     Balign 16,
@@ -173,7 +170,6 @@ header =
     ALabel "_output_char",
     MovI (Reg 0) 1,
     GetAddress (Reg 1) "buf",
-    -- Ldr (Reg 8) SP 0, CONSUME
     Ldr (Reg 8) SP 16,
     Str (Reg 8) (Reg 1),
     MovI (Reg 2) 1,
@@ -181,7 +177,6 @@ header =
     Svc,
     Ret,
     ALabel "_output_num",
-    -- Ldr (Reg 0) SP 0, CONSUME
     Ldr (Reg 0) SP 16,
     Psh (Reg 30),
     ALabel "_int_to_ascii",
@@ -191,7 +186,6 @@ header =
     Psh (Reg 1),
     Mov (Reg 27) (Reg 0),
     Bl "_output_char",
-    -- Ldr (Reg 28) SP 16, (remove this i think)
     Mov (Reg 0) (Reg 27),
     MovI (Reg 27) 0,
     Negs (Reg 0) (Reg 0),
@@ -213,7 +207,6 @@ header =
     Cmp (Reg 27) 0,
     B LE "_done_ascii",
     Bl "_output_char",
-    -- Ldr (Reg 28) SP 16, (remove this i think)
     ASubI (Reg 27) (Reg 27) 1,
     Bl "_print_stack",
     ALabel "_done_ascii",
@@ -233,7 +226,7 @@ header =
     Mov (Reg 30) (Reg 29),
     Ret,
     ALabel "_input_num",
-    MovI (Reg 21) 1, -- ADDITION
+    MovI (Reg 21) 1,
     Mov (Reg 22) (Reg 30),
     MovI (Reg 0) 0,
     GetAddress (Reg 26) "buf",
@@ -241,7 +234,6 @@ header =
     MovI (Reg 2) 11,
     MovI (Reg 16) 3,
     Svc,
-    -- ADDITION
     MovI (Reg 6) 0,
     Ldrb (Reg32 5) (Reg 26) (Reg 6),
     Cmp (Reg 5) 45,
@@ -250,7 +242,6 @@ header =
     ASubI (Reg 0) (Reg 0) 1,
     MovI (Reg 21) (-1),
     ALabel "_nonneg",
-    -- ADDITION ENDS
     ASubI (Reg 0) (Reg 0) 1,
     Mov (Reg 25) (Reg 0),
     Mov (Reg 24) (Reg 0),
@@ -276,7 +267,7 @@ header =
     ASubI (Reg 24) (Reg 24) 1,
     Bl "_calculate_number",
     ALabel "_done_calculation",
-    AMul (Reg 23) (Reg 23) (Reg 21), -- ADDITION
+    AMul (Reg 23) (Reg 23) (Reg 21),
     Ldr (Reg 1) SP 16,
     GetAddress (Reg 2) "heap",
     MovI (Reg 3) 8,

@@ -21,6 +21,7 @@ import MonadReadWrite (MonadReadWrite (..), readLine)
 import Program (Program, ProgramState, listToArray)
 import WSyntax (WBop (..), WCond (..), WInstruction (..))
 
+-- | A representation of the internal store of a whitespace program
 data WStore = WStore
   { _valStack :: [Int],
     _callStack :: [Int],
@@ -30,12 +31,15 @@ data WStore = WStore
 
 makeLenses ''WStore
 
+-- | The inittial store of a whitespace program
 initStore :: WStore
 initStore = WStore [] [] Map.empty
 
+-- | The initial state of a whitespace program. The 0 represents the program counter
 initState :: (WStore, Int)
 initState = (initStore, 0)
 
+-- | Possible errors that the whitesspace program can throw
 data WError
   = ProgramOutOfBounds Int
   | InvalidOutputChar
@@ -46,6 +50,7 @@ data WError
   | DivideByZero
   deriving (Eq, Show)
 
+-- | A monad, that when run, executes the program
 toProgramState :: forall m. (ProgramState WStore m, MonadReadWrite m, MonadError WError m) => Program WInstruction -> m ()
 toProgramState program = do
   (store, pc) <- get
@@ -94,7 +99,7 @@ toProgramState program = do
                 Add -> (+)
                 Sub -> (-)
                 Mul -> (*)
-                Div -> div
+                Div -> quot
                 Mod -> rem
           push $ op a b
     Label n -> throwError LabelFound
@@ -120,8 +125,8 @@ toProgramState program = do
         then throwError NegativeHeapKey
         else push $ fromMaybe 0 (store ^. heap & Map.lookup addr)
   unless (instr == End) $ do
-    (store, pc) <- get
-    put (store, pc + 1)
+    (store', pc') <- get
+    put (store', pc' + 1)
     toProgramState program
   where
     pop :: m Int
@@ -142,23 +147,21 @@ toProgramState program = do
     heapPlace val = do
       (store, pc) <- get
       addr <- pop
+      (store', _) <- get
       if addr < 0
         then throwError NegativeHeapKey
-        else put (store & heap %~ Map.insert addr val, pc)
+        else put (store' & heap %~ Map.insert addr val, pc)
 
+-- | Executes the a whitespace program, returning either an error or the program state
 execProgram :: MonadReadWrite m => Program WInstruction -> m (Either WError (WStore, Int))
 execProgram program = do
   let programState = toProgramState program
   runExceptT $ execStateT programState initState
 
+-- | Runs the program using standard in and out for input and output.
 execProgramIO :: Program WInstruction -> IO (WStore, Int)
 execProgramIO program = do
   possibleError <- execProgram program
   case possibleError of
     Left err -> error $ show err
     Right state -> return state
-
-arr = listToArray [1, 2, 3, 4]
-
--- >>> arr ^? ix 0
--- Just 1

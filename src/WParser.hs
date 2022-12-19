@@ -1,13 +1,13 @@
 module WParser where
 
-import Control.Applicative (Alternative (many, some, (<|>)), Applicative (liftA2))
+import Control.Applicative (Alternative (many, some, (<|>)))
 import Control.Monad.Trans (MonadTrans (..))
 import Data.Foldable (asum)
 import Data.Functor (($>))
-import Data.List (foldl', intercalate)
+import Data.List (foldl')
 import Data.List.NonEmpty (NonEmpty, nonEmpty)
 import Data.Maybe (mapMaybe)
-import Parser (Parser, constP, constPTok, eof, parse, parseFromFile, token, tokens)
+import Parser (Parser, constP, constPTok, eof, parse, token, tokens)
 import WSyntax (WBop (..), WCond (..), WInstruction (..))
 
 data Token = Space | Tab | LF deriving (Eq, Show, Ord)
@@ -18,7 +18,6 @@ type WCommand = WInstruction WLabel
 
 type WParser a = Parser Token a
 
--- This could be done with a Read instance for Token (maybe change later)
 parseToken :: Char -> Maybe Token
 parseToken ' ' = Just Space
 parseToken '\t' = Just Tab
@@ -28,6 +27,9 @@ parseToken _ = Nothing
 tokenize :: String -> [Token]
 tokenize = mapMaybe parseToken
 
+-- | Parses number
+-- first character determines sign (space = +, tab = -)
+-- rem characters are binary representation of num (space = 0, tab = 1)
 numberP :: WParser Int
 numberP =
   (constPTok Tab negate <|> constPTok Space id)
@@ -36,6 +38,7 @@ numberP =
     binToNum :: [Int] -> Int
     binToNum = foldl' (\acc x -> acc * 2 + x) 0
 
+-- | Parses
 labelP :: WParser WLabel
 labelP = WLabel <$> (some (token Space <|> token Tab) <* token LF >>= lift . nonEmpty)
 

@@ -9,7 +9,7 @@ import Test.QuickCheck (Arbitrary (..), Property)
 import Test.QuickCheck qualified as QC
 import Test.QuickCheck.Arbitrary (Arbitrary)
 import Test.QuickCheck.Gen (Gen)
-import WSyntax (WInstruction (..))
+import WSyntax (WBop (..), WInstruction (..))
 
 -- | Quickcheck tests
 numPops :: WInstruction l -> Int
@@ -30,8 +30,8 @@ numPops (Jump _) = 0
 numPops (Branch _ _) = 0
 numPops Return = 0
 numPops End = 0
-numPops Store = 1
-numPops Retrieve = 0
+numPops Store = 2
+numPops Retrieve = 1
 
 numPushes :: WInstruction l -> Int
 numPushes InputChar = 0
@@ -156,14 +156,33 @@ sprinkleHeap gen = do
 heapInstr :: Gen (WInstruction l)
 heapInstr = QC.elements [Store, Retrieve]
 
+-- posInstr :: Gen (WInstruction l)
+-- posInstr = QC.frequency [
+
+-- ]
+
 validHeapAndOutputProgram :: Gen [WInstruction l]
 validHeapAndOutputProgram = (<> [End]) . stackValidate <$> sprinkleHeap gen
   where
     gen :: Gen (WInstruction l)
     gen =
       QC.frequency
-        [ (5, Push <$> arbitrary),
-          (1, smallStackInstr),
-          (1, outputInstr),
-          (2, heapInstr)
+        [ (5, Push . (`mod` 10) <$> arbitrary),
+          (1, smallPosStackInstr),
+          (2, pure OutputNum),
+          (1, heapInstr)
         ]
+
+    smallPosStackInstr :: Gen (WInstruction l)
+    smallPosStackInstr = do
+      instr <- smallStackInstr
+      return $ case instr of
+        Push n -> Push (n `mod` 10)
+        Arith e | e `elem` [Sub, Div, Mod] -> Arith Add
+        _ -> instr
+
+checkProp :: (Show l, Arbitrary l) => Gen [WInstruction l] -> ([WInstruction l] -> Property) -> Property
+checkProp gen prop =
+  QC.withMaxSuccess
+    150
+    (QC.forAllShrink gen (map (\l' -> l' <> [End]) . shrink . init) prop)

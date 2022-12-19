@@ -1,12 +1,12 @@
 module CompilerTest (qc) where
 
 import ASyntax (toArm64String)
+import Control.Monad (unless, when)
 import Control.Monad.Reader (MonadReader (ask), MonadTrans (lift), ReaderT (runReaderT))
 import Data.Function ((&))
 import Data.List (intercalate)
 import Data.Maybe (isJust)
 import FakeIO (outputOf)
-import GHC.TopHandler (flushStdHandles)
 import Program (listToArray, mkProgram)
 import System.Process (CreateProcess, createProcess, shell, waitForProcess)
 import Test.HUnit (Test, assert, runTestTT, (~:))
@@ -15,7 +15,7 @@ import Test.QuickCheck qualified as QC
 import Test.QuickCheck.Gen (Gen)
 import Test.QuickCheck.Monadic qualified as QC
 import Test.QuickCheck.Property qualified as QC
-import WArbPrograms (validHeapAndOutputProgram, validOutputProgram)
+import WArbPrograms (checkProp, validHeapAndOutputProgram, validOutputProgram)
 import WCompiler (compileProgram)
 import WParser (WCommand)
 import WParserTest qualified
@@ -30,35 +30,6 @@ script = shell "test_files/qcoutput/script.sh"
 
 outFile :: FilePath
 outFile = "test_files/qcoutput/out.txt"
-
-s :: CreateProcess
-s = shell "bash script.sh"
-
--- >>> createProcess s
-
--- | Unit tests
-tHelloWorld :: Test
-tHelloWorld =
-  "hello world" ~: test2
-
-test :: IO ()
-test = do
-  putStrLn "hello world"
-  _ <- createProcess s
-  program <- readFile "out.txt"
-  putStrLn "aa"
-
-test2 :: IO ()
-test2 = do
-  _ <- createProcess s
-  str <- readFile "out.txt"
-  assert (str == "Hola, mundo\n")
-
-temp :: IO String
-temp = readFile "out.txt"
-
--- >>> temp
--- "Hola, mundo\n"
 
 -- | Quickcheck
 prop_model :: [WCommand] -> Property
@@ -88,12 +59,13 @@ prop_model commands = QC.monadicIO $ do
       -- Read in the output
       executableOutput <- QC.run $ readFile outFile
 
-      QC.run $ print ("Interpreted: " ++ interpretedOutput)
-      QC.run $ print ("Executable: " ++ executableOutput)
+      let condition = executableOutput == interpretedOutput
 
       QC.assert (executableOutput == interpretedOutput)
 
 qc :: IO ()
 qc = do
-  putStrLn "Prop Model"
-  QC.quickCheck $ QC.forAllShrink validOutputProgram (map (\l' -> l' <> [End]) . shrink . init) prop_model
+  -- putStrLn "prop_model no heap"
+  -- QC.quickCheck $ checkProp validOutputProgram prop_model
+  putStrLn "prop_model with heap"
+  QC.quickCheck $ checkProp validHeapAndOutputProgram prop_model
