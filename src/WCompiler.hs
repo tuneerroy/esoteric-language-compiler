@@ -13,12 +13,12 @@ compileCommand i = case i of
       MovI (Reg 0) 1,
       GetAddress (Reg 1) "buf",
       Mov (Reg 26) (Reg 1),
-      MovI (Reg 2) 2,
+      MovI (Reg 2) 1,
       MovI (Reg 16) 3,
       Svc,
       Ldr (Reg 0) (Reg 26) 0,
-      Ldr (Reg 1) SP 16,
-      GetAddress (Reg 2) "buf",
+      Ldr (Reg 1) SP 0,
+      GetAddress (Reg 2) "heap",
       StrO (Reg 0) (Reg 2) (Reg 1)
     ]
   InputNum ->
