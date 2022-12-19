@@ -88,20 +88,20 @@ library
   import:
       common-stanza
   exposed-modules:
-      Parser,
-      Program,
-      BSyntax,
+      ASyntax,
+      BCompiler,
       BParser,
       BStepper,
-      BCompiler,
-      NonNeg,
+      BSyntax,
+      Compiler,
+      Parser,
+      JumpProgram,
       MonadReadWrite,
-      WSyntax,
+      NonNeg,
+      WCompiler
       WParser,
       WStepper,
-      ASyntax,
-      Compiler,
-      WCompiler
+      WSyntax
       
   hs-source-dirs:
       src

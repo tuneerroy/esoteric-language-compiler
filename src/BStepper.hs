@@ -4,20 +4,16 @@ module BStepper where
 
 import BSyntax (BInstruction (..))
 import Control.Lens (Ixed (ix), makeLenses, (%~), (&), (.~), (^.), (^?))
-import Control.Monad (forM_, unless, void, when)
-import Control.Monad.Except (ExceptT, MonadError (..), runExceptT)
-import Control.Monad.State (MonadState (get, put), StateT (runStateT))
-import Control.Monad.State.Lazy (StateT, execStateT, modify)
+import Control.Monad.State (MonadState (get, put), StateT (runStateT), execStateT)
 import Control.Monad.Trans (MonadTrans (..))
 import Data.Char (chr)
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Maybe (fromMaybe)
 import Data.Word (Word8)
-import GHC.Arr (bounds)
 import MonadReadWrite (MonadReadWrite (..))
-import Program (Program, ProgramState)
 
+-- | Internal state of a brainfuck program
 data BStore = BStore
   { _ptr :: Int,
     _heap :: Map Int Word8
@@ -25,9 +21,11 @@ data BStore = BStore
 
 makeLenses ''BStore
 
+-- | Initial internal state of a brainfuck program
 initStore :: BStore
 initStore = BStore 0 Map.empty
 
+-- | A monad, that when run, executes the program
 toProgramState :: forall m. (MonadState BStore m, MonadReadWrite m) => [BInstruction] -> m ()
 toProgramState [] = return ()
 toProgramState program@(instr : instrs) = do
@@ -63,5 +61,6 @@ toProgramState program@(instr : instrs) = do
 execProgram :: MonadReadWrite m => [BInstruction] -> m BStore
 execProgram program = execStateT (toProgramState program) initStore
 
+-- | Execute the program in IO
 execProgramIO :: [BInstruction] -> IO BStore
 execProgramIO = execProgram

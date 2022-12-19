@@ -7,18 +7,16 @@ import Control.Monad (forM_, unless, void, when)
 import Control.Monad.Except (ExceptT, MonadError (..), runExceptT)
 import Control.Monad.State
   ( MonadState (get, put),
-    StateT (runStateT),
-    evalStateT,
     execStateT,
   )
-import Control.Monad.State.Lazy (StateT, gets, modify)
+import Control.Monad.State.Lazy (StateT, gets)
 import Control.Monad.Trans (MonadTrans (..))
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Maybe (fromMaybe)
-import GHC.Arr (Ix (range), (!))
+import GHC.Arr (Ix (range))
+import JumpProgram (JumpProgram)
 import MonadReadWrite (MonadReadWrite (..), readLine)
-import Program (Program, ProgramState, listToArray)
 import WSyntax (WBop (..), WCond (..), WInstruction (..))
 
 -- | A representation of the internal store of a whitespace program
@@ -51,7 +49,11 @@ data WError
   deriving (Eq, Show)
 
 -- | A monad, that when run, executes the program
-toProgramState :: forall m. (ProgramState WStore m, MonadReadWrite m, MonadError WError m) => Program WInstruction -> m ()
+toProgramState ::
+  forall m.
+  (MonadState (WStore, Int) m, MonadReadWrite m, MonadError WError m) =>
+  JumpProgram WInstruction ->
+  m ()
 toProgramState program = do
   (store, pc) <- get
   -- writeString $ show $ store ^. valStack
@@ -153,13 +155,13 @@ toProgramState program = do
         else put (store' & heap %~ Map.insert addr val, pc)
 
 -- | Executes the a whitespace program, returning either an error or the program state
-execProgram :: MonadReadWrite m => Program WInstruction -> m (Either WError (WStore, Int))
+execProgram :: MonadReadWrite m => JumpProgram WInstruction -> m (Either WError (WStore, Int))
 execProgram program = do
   let programState = toProgramState program
   runExceptT $ execStateT programState initState
 
 -- | Runs the program using standard in and out for input and output.
-execProgramIO :: Program WInstruction -> IO (WStore, Int)
+execProgramIO :: JumpProgram WInstruction -> IO (WStore, Int)
 execProgramIO program = do
   possibleError <- execProgram program
   case possibleError of

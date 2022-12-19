@@ -2,12 +2,12 @@
 .balign 4
 buf: .space 20, 0
 .balign 4
-heap: .space 1000000, 0
+heap: .space 10000000, 0
 .text
 .global _start
 .balign 16
 _divide:
-udiv x2, x0, x1
+sdiv x2, x0, x1
 msub x3, x2, x1, x0
 ret
 _output_char:

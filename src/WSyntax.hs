@@ -1,7 +1,5 @@
 module WSyntax (WBop (..), WCond (..), WInstruction (..)) where
 
--- import Program (Instruction (..))
-
 import NonNeg (NonNeg)
 import Test.QuickCheck (Arbitrary (arbitrary, shrink), Gen)
 import Test.QuickCheck.Gen (elements, oneof)

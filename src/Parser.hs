@@ -2,17 +2,13 @@
 
 module Parser where
 
-import Control.Applicative
+import Control.Applicative (Applicative (pure, (<*>)))
 import Control.Monad (guard)
-import Control.Monad.Cont (MonadTrans (lift))
-import Control.Monad.State (StateT (StateT), evalStateT, lift, runStateT)
+import Control.Monad.State (StateT (StateT), evalStateT, runStateT)
 import Data.Functor (($>))
-import Data.Maybe (mapMaybe)
 import System.IO qualified as IO
 import System.IO.Error qualified as IO
 import Prelude hiding (filter)
-
--- | Test modules
 
 -- | Definition of parser type.
 -- The same as from the Lu assignment, but generalized over any string of tokens

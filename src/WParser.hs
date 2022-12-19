@@ -38,7 +38,8 @@ numberP =
     binToNum :: [Int] -> Int
     binToNum = foldl' (\acc x -> acc * 2 + x) 0
 
--- | Parses
+-- | Parses labels
+-- sequence of spaces and tabs until line feed
 labelP :: WParser WLabel
 labelP = WLabel <$> (some (token Space <|> token Tab) <* token LF >>= lift . nonEmpty)
 
@@ -97,7 +98,7 @@ command = asum [ioP, stackP, arithP, flowP, heapP]
            )
 
 block :: WParser [WCommand]
-block = many command
+block = many command <* (eof <|> token LF *> eof)
 
 parseTokens :: [Token] -> Maybe [WCommand]
 parseTokens = parse block

@@ -12,9 +12,7 @@ data BInstruction
   | DecrByte -- (*ptr)--
   | Output -- putchar(*ptr);
   | Input -- ptr = getchar();
-  | While [BInstruction]
-  --   | WhileStart a -- while (*ptr) {
-  --   | WhileEnd a -- }
+  | While [BInstruction] -- while (*ptr) { ... }
   deriving (Eq, Show)
 
 instance Arbitrary BInstruction where

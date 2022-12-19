@@ -2,17 +2,24 @@ module WInterpreterTest (qc) where
 
 import Control.Applicative (liftA3)
 import Control.Lens ((&), (^.))
-import Data.Function
+import Data.Function ((&))
 import Data.Maybe (isJust, isNothing)
 import FakeIO (finalStateOf, outputOf)
-import Program (listToArray)
+import JumpProgram (listToArray)
 import Test.HUnit (Assertion, Counts, Test (..), assert, runTestTT, (~:), (~?=))
 import Test.QuickCheck (Property)
 import Test.QuickCheck qualified as QC
 import WArbPrograms
+  ( stackProgram,
+    stackVerify,
+    validHeapAndOutputProgram,
+    validOutputProgram,
+    validStackProgram,
+  )
 import WStepper (WError (..), execProgram, valStack)
 import WSyntax (WBop (..), WInstruction (..))
 
+-- | Checks that programs that should overflow the stack actually do
 prop_verifyEmptyStack :: [WInstruction Int] -> Property
 prop_verifyEmptyStack instrs = case err of
   Left ValStackEmpty -> instrs & QC.collect ValStackEmpty . isNothing . stackVerify
@@ -21,6 +28,7 @@ prop_verifyEmptyStack instrs = case err of
   where
     err = finalStateOf (execProgram $ listToArray instrs) []
 
+-- Checks that validated programs don't overflow thes stack
 prop_validateNonemptyStack :: [WInstruction Int] -> Property
 prop_validateNonemptyStack instrs = case err of
   Left ValStackEmpty -> QC.collect ValStackEmpty False
@@ -29,6 +37,8 @@ prop_validateNonemptyStack instrs = case err of
   where
     err = finalStateOf (execProgram $ listToArray instrs) []
 
+-- | Checks that storing a value at the beginning of the program then
+-- | retreiving it at the end is valid
 prop_heap :: (Int, Int, [WInstruction Int]) -> Property
 prop_heap (val, addr, instrs) = case finalState of
   Left _ -> QC.property QC.Discard
@@ -45,6 +55,7 @@ prop_heap (val, addr, instrs) = case finalState of
 
     finalState = finalStateOf (execProgram $ listToArray (addHeap instrs)) []
 
+-- | Checks that output commands actually output values
 prop_outputCount :: [WInstruction Int] -> Property
 prop_outputCount instrs = case err of
   Left we -> QC.property QC.Discard
@@ -58,6 +69,8 @@ qc = do
   putStrLn "prop_verifyEmptyStack"
   QC.quickCheck $ QC.forAll stackProgram prop_verifyEmptyStack
   putStrLn "prop_validateNonemptyStack"
+  QC.quickCheck $ QC.forAll validStackProgram prop_validateNonemptyStack
+  putStrLn "prop_validateNonemptyStack with heap"
   QC.quickCheck $ QC.forAll validStackProgram prop_validateNonemptyStack
   putStrLn "prop_outputCount"
   QC.quickCheck $ QC.forAll validOutputProgram prop_outputCount

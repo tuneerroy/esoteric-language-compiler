@@ -5,10 +5,13 @@ import Control.Monad.Except (ExceptT)
 import Control.Monad.State (StateT)
 import Control.Monad.Trans (MonadTrans (lift))
 
+-- | A typeclass that represents being able to perform IO
+-- | More general so we can use pure alternatives
 class Monad m => MonadReadWrite m where
   readChar :: m Char
   writeString :: String -> m ()
 
+-- | For most purposes, we want actual IO to be our MonadReadWrite
 instance MonadReadWrite IO where
   readChar :: IO Char
   readChar = getChar

@@ -12,7 +12,7 @@ import Data.Function ((&))
 import Data.Functor (void)
 import Data.Functor.Identity (Identity (..))
 import FakeIO (FakeIO, outputOf)
-import Program (listToArray, mkProgram)
+import JumpProgram (listToArray, mkJumpProgram)
 import System.Process (createProcess, getPid, shell, waitForProcess)
 import Test.HUnit (Test)
 import Test.HUnit.Base (assert)
@@ -21,18 +21,6 @@ import WParser (WCommand, parseString)
 import WStepper (execProgram, execProgramIO)
 import WSyntax ()
 
--- take in filename (including directory)
--- read in the data, hold in string
--- take in input...? (and maybe expected output?)
--- run it on interpreter, store result
--- run it on respective compiler
--- convert to asm
--- paste asm into file
--- run shell script on file (pass in input.txt and output.txt)
--- read in resulting data (from output.txt)
---
-
--- Directory -> Filename -> Program Args -> Parser
 createUnitTest ::
   String -> -- Directory Name, Ex: "test_files"
   String -> --Filename Extension, Ex: ".ws"
@@ -78,7 +66,7 @@ debugWS dir args = do
   let totalPath = dir ++ "/program"
   programString <- readFile (totalPath ++ ".ws")
 
-  let program = case WParser.parseString programString >>= mkProgram of
+  let program = case WParser.parseString programString >>= mkJumpProgram of
         Nothing -> error "Failed to make program"
         Just x -> x
 
@@ -115,39 +103,6 @@ testWSHelloWorld =
     ""
     wLanguage
 
-testWSAsterikGrid :: IO ()
-testWSAsterikGrid =
-  createUnitTest
-    (wsFilePath ++ "asterikgrid")
-    "ws"
-    ""
-    wLanguage
-
-testWSCat :: IO ()
-testWSCat =
-  createUnitTest
-    (wsFilePath ++ "cat")
-    "ws"
-    "gema kgk aem134 45 523fekma"
-    wLanguage
-
-testWS99Bottles :: IO ()
-testWS99Bottles =
-  createUnitTest
-    (wsFilePath ++ "99bottles")
-    "ws"
-    "5"
-    wLanguage
-
-testWSFib :: IO ()
--- testWSFib = debugWS (wsFilePath ++ "fib") "10"
-testWSFib =
-  createUnitTest
-    (wsFilePath ++ "fib")
-    "ws"
-    "1"
-    wLanguage
-
 testWS1To100 :: IO ()
 testWS1To100 =
   createUnitTest
@@ -156,58 +111,42 @@ testWS1To100 =
     ""
     wLanguage
 
-testWSTruthMachine :: IO ()
-testWSTruthMachine =
+testWSJumpAllTest :: IO ()
+testWSJumpAllTest =
   createUnitTest
-    (wsFilePath ++ "truthmachine")
+    (wsFilePath ++ "jumpAll")
     "ws"
     ""
     wLanguage
 
-testBFBSort :: IO ()
-testBFBSort =
+testWSJumpNegNotTakenTest :: IO ()
+testWSJumpNegNotTakenTest =
   createUnitTest
-    (bfFilePath ++ "bsort")
-    "b"
+    (wsFilePath ++ "jumpNegNotTaken")
+    "ws"
     ""
-    bLanguage
+    wLanguage
 
-testBFCat :: IO ()
-testBFCat =
+testWSJumpZTakenTest :: IO ()
+testWSJumpZTakenTest =
   createUnitTest
-    (bfFilePath ++ "cat")
-    "b"
-    "gjenamg 1214 fejnwam"
-    bLanguage
+    (wsFilePath ++ "jumpZTaken")
+    "ws"
+    ""
+    wLanguage
+
+testWSJumpZNotTakenTest :: IO ()
+testWSJumpZNotTakenTest =
+  createUnitTest
+    (wsFilePath ++ "jumpZNotTaken")
+    "ws"
+    ""
+    wLanguage
 
 testBFFactorial :: IO ()
 testBFFactorial =
   createUnitTest
     (bfFilePath ++ "factorial")
-    "b"
-    ""
-    bLanguage
-
-testBFHead :: IO ()
-testBFHead =
-  createUnitTest
-    (bfFilePath ++ "head")
-    "b"
-    ""
-    bLanguage
-
-testBFIsort :: IO ()
-testBFIsort =
-  createUnitTest
-    (bfFilePath ++ "isort")
-    "b"
-    ""
-    bLanguage
-
-testBFQsort :: IO ()
-testBFQsort =
-  createUnitTest
-    (bfFilePath ++ "qsort")
     "b"
     ""
     bLanguage
@@ -229,9 +168,10 @@ data Language a = Language
 wLanguage :: Language WCommand
 wLanguage = Language WParser.parseString wInterpreter WCompiler.compileProgram
 
+-- | Get the output of a whitespace program on an input string
 wInterpreter :: [WCommand] -> String -> Maybe String
 wInterpreter commands inputs = do
-  instrs <- mkProgram commands
+  instrs <- mkJumpProgram commands
   case outputOf (WStepper.execProgram instrs) inputs of
     Left err -> Nothing
     Right s -> Just s
@@ -239,17 +179,31 @@ wInterpreter commands inputs = do
 bLanguage :: Language BInstruction
 bLanguage = Language BParser.parseString bInterpreter BCompiler.compileProgram
 
+-- | Get the output of a brainfuck program on an input string
 bInterpreter :: [BInstruction] -> String -> Maybe String
 bInterpreter instrs input = Just res
   where
+    -- We use identity since execProgram is generalized on monads
     Identity res = outputOf (Identity <$> BStepper.execProgram instrs) input
+
+{--
+
+-- testWSFib, (live demo) -- <>
+-- testWSCalcTest, -- (live demo) <>
+-- testWSNameTest, (live demo) -- <>
+-- testBFFactorial, (possibly live?)
+-- testBFCat <>
+
+--}
 
 main :: IO ()
 main =
   sequenceA_
     [ testWSHelloWorld,
-      testWSAsterikGrid,
-      testWSCat,
       testWS1To100,
-      testWSTruthMachine
+      testWSJumpAllTest,
+      testWSJumpNegNotTakenTest,
+      testWSJumpZNotTakenTest,
+      testWSJumpZTakenTest,
+      testBFSquares
     ]

@@ -3,7 +3,6 @@ module WParserTest where
 import Data.Foldable (Foldable (toList))
 import Data.List.NonEmpty (NonEmpty (..))
 import Parser (parse)
-import Program (mkProgram)
 import Test.HUnit ()
 import Test.QuickCheck
   ( Arbitrary (..),

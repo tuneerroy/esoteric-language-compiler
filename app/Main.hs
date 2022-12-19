@@ -13,6 +13,46 @@ import WParser (parseString)
 
 data Filetype = WS | BF
 
+-- createUnitTest ::
+--   String -> -- Directory Name, Ex: "test_files"
+--   String -> --Filename Extension, Ex: ".ws"
+--   String -> -- Program Args, Ex: "12+23-*"
+--   Language a ->
+--   IO ()
+-- createUnitTest dir ext args lang = do
+--   putStrLn dir
+--   let totalPath = dir ++ "/program"
+--   program <- readFile (totalPath ++ "." ++ ext)
+--   writeFile (dir ++ "/in.txt") args
+--   putStrLn "here"
+--   case parse lang program of
+--     Nothing -> error "Unable to parse"
+--     Just parsed -> do
+--       -- avengers assemble
+--       writeFile (totalPath ++ ".s") (instructionsToStrings $ compile lang parsed)
+--       -- compile ARM assembly
+--       putStrLn "here4"
+--       runScript $ "as -o " ++ totalPath ++ ".o " ++ totalPath ++ ".s"
+--       -- create executable
+--       runScript $
+--         "ld -macosx_version_min 11.0.0 -o "
+--           ++ totalPath
+--           ++ " "
+--           ++ totalPath
+--           ++ ".o -lSystem -syslibroot `xcrun -sdk macosx \
+--              \ --show-sdk-path` -e _start -arch arm64"
+--       -- run executable and output to "output.txt"
+--       putStrLn "here5"
+--       runScript $ "./" ++ totalPath ++ " > " ++ dir ++ "/out.txt"
+--       actual <- readFile (dir ++ "/out.txt")
+--       putStrLn "read file"
+--       case interpret lang parsed args of
+--         Nothing -> error "Unable to interpret"
+--         Just expected -> do
+--           putStr $ "Expected: <>" ++ expected ++ "<>\n"
+--           putStr $ "Actual: <>" ++ actual ++ "<>\n"
+--           assert $ expected == actual
+
 main :: IO ()
 main = do
   putStrLn "Input filename: "
@@ -25,7 +65,7 @@ main = do
       -- read program
       program <- readFile inputFilename
       case compile program filetype of
-        Nothing -> putStrLn "Error parsing program"
+        Nothing -> putStrLn "Error parsing program."
         Just compiled ->
           writeFile outputFilename compiled
             >>= return (putStrLn "Compiled program")

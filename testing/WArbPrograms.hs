@@ -11,7 +11,7 @@ import Test.QuickCheck.Arbitrary (Arbitrary)
 import Test.QuickCheck.Gen (Gen)
 import WSyntax (WBop (..), WInstruction (..))
 
--- | Quickcheck tests
+-- | Number of times the instruction pops the stack
 numPops :: WInstruction l -> Int
 numPops InputChar = 1
 numPops InputNum = 1
@@ -33,6 +33,7 @@ numPops End = 0
 numPops Store = 2
 numPops Retrieve = 1
 
+-- | Number of times the instruction pushes to the stack
 numPushes :: WInstruction l -> Int
 numPushes InputChar = 0
 numPushes InputNum = 0
@@ -54,9 +55,7 @@ numPushes End = 0
 numPushes Store = 0
 numPushes Retrieve = 1
 
-class InstructionSet a where
-  unpack :: a -> WInstruction Int
-
+-- | Instructions that modify the stack and nothing else
 arbStackInstr :: Gen (WInstruction l)
 arbStackInstr =
   QC.oneof
@@ -69,6 +68,7 @@ arbStackInstr =
       Arith <$> arbitrary
     ]
 
+-- | Instructions that modify the stack, but in a more reasonable range
 smallStackInstr :: Gen (WInstruction l)
 smallStackInstr = do
   instr <- arbStackInstr
@@ -77,15 +77,20 @@ smallStackInstr = do
     Slide n -> return (Slide $ toEnum (fromEnum n `mod` 5))
     _ -> return instr
 
+-- | Creates a list of WInstructions and places and end on it
 programOf :: Gen (WInstruction l) -> Gen [WInstruction l]
 programOf gen = do
   size <- QC.getSize
+  -- We change the size parameter because the default size is small
   instrs <- QC.resize (size * 5) $ QC.listOf gen
   return (instrs ++ [End])
 
+-- | Program that only modifies stack instrucionts
 stackProgram :: Gen [WInstruction l]
 stackProgram = programOf smallStackInstr
 
+-- | Returns nothing if the program would yield an empty stack pop
+-- Otherwise retunrs the final height of the stack
 stackVerify :: [WInstruction l] -> Maybe Int
 stackVerify = aux 0
   where
@@ -96,6 +101,7 @@ stackVerify = aux 0
       guard (stackHeight' >= 0)
       aux (stackHeight' + numPushes x) xs
 
+-- | Erases instructions that would pop an empty stack
 stackValidate :: [WInstruction l] -> [WInstruction l]
 stackValidate l = evalState (mStackValidate l) 0
   where
@@ -109,6 +115,7 @@ stackValidate l = evalState (mStackValidate l) 0
         else mStackValidate xs
     mStackValidate [] = return []
 
+-- | A program that only modifies the stack and is valid
 validStackProgram :: Gen [WInstruction l]
 validStackProgram =
   stackValidate
@@ -117,6 +124,7 @@ validStackProgram =
 outputInstr :: Gen (WInstruction l)
 outputInstr = QC.elements [OutputNum]
 
+-- | Program that does not pop an empty stack and also outputs values
 validOutputProgram :: Gen [WInstruction l]
 validOutputProgram =
   stackValidate
@@ -128,9 +136,11 @@ validOutputProgram =
           ]
       )
 
+-- | Instructions that take input
 inputInstr :: Gen (WInstruction l)
 inputInstr = QC.elements [InputChar, InputNum]
 
+-- | Program that takes inputs
 validInputProgram :: Gen [WInstruction l]
 validInputProgram =
   stackValidate
@@ -142,32 +152,32 @@ validInputProgram =
           ]
       )
 
+-- | Adds in a store and a subsequent load to the same address sandwiched between
+-- other instructions given
 sprinkleHeap :: Gen (WInstruction l) -> Gen [WInstruction l]
 sprinkleHeap gen = do
   begin <- QC.listOf gen
-  (addr :: Int) <- arbitrary
-  (val :: Int) <- arbitrary
+  (addr :: Int) <- abs <$> arbitrary
+  (val :: Int) <- abs <$> arbitrary
   let storeInstrs = [Push addr, Push val, Store]
   middle <- QC.listOf gen
   let loadInstrs = [Push addr, Retrieve]
   end <- QC.listOf gen
   return $ begin <> storeInstrs <> middle <> loadInstrs <> end
 
+-- | Instructions that have heap
 heapInstr :: Gen (WInstruction l)
 heapInstr = QC.elements [Store, Retrieve]
 
--- posInstr :: Gen (WInstruction l)
--- posInstr = QC.frequency [
-
--- ]
-
+-- | A program that can both modify the heap and output characters that does not
+-- pop the empty stack
 validHeapAndOutputProgram :: Gen [WInstruction l]
 validHeapAndOutputProgram = (<> [End]) . stackValidate <$> sprinkleHeap gen
   where
     gen :: Gen (WInstruction l)
     gen =
       QC.frequency
-        [ (5, Push . (`mod` 10) <$> arbitrary),
+        [ (5, Push . abs <$> arbitrary),
           (1, smallPosStackInstr),
           (2, pure OutputNum),
           (1, heapInstr)
@@ -177,12 +187,9 @@ validHeapAndOutputProgram = (<> [End]) . stackValidate <$> sprinkleHeap gen
     smallPosStackInstr = do
       instr <- smallStackInstr
       return $ case instr of
-        Push n -> Push (n `mod` 10)
-        Arith e | e `elem` [Sub, Div, Mod] -> Arith Add
+        Push n -> Push $ abs n
         _ -> instr
 
-checkProp :: (Show l, Arbitrary l) => Gen [WInstruction l] -> ([WInstruction l] -> Property) -> Property
-checkProp gen prop =
-  QC.withMaxSuccess
-    150
-    (QC.forAllShrink gen (map (\l' -> l' <> [End]) . shrink . init) prop)
+-- Check a property intelligently for a whitespace program
+checkProp :: (Show l, Arbitrary l) => Gen [WInstruction l] -> ([WInstruction l] -> Property) -> IO ()
+checkProp gen prop = QC.quickCheck (QC.forAllShrink gen (map (\l' -> l' <> [End]) . shrink . init) prop)

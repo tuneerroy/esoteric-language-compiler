@@ -31,7 +31,13 @@ instance Applicative (State' s) where
   pure = return
   (<*>) = ap
 
--- | The actual fake state
+get' :: State' s s
+get' = S $ \s -> (s, s)
+
+put' :: s -> State' s ()
+put' s' = S $ const ((), s')
+
+-- | The actual fake state. Output is a DList for efficiency
 data FakeState = FakeState
   { input :: String,
     output :: String -> String
@@ -39,12 +45,7 @@ data FakeState = FakeState
 
 type FakeIO = State' FakeState
 
-get' :: State' s s
-get' = S $ \s -> (s, s)
-
-put' :: s -> State' s ()
-put' s' = S $ const ((), s')
-
+-- | We will usually want to provide infinite input, so it's not too bad that our readChar is partial
 instance MonadReadWrite FakeIO where
   readChar = do
     state <- get'
@@ -57,14 +58,18 @@ instance MonadReadWrite FakeIO where
     state <- get'
     put' $ state {output = output state . (s <>)}
 
+-- | Converts a string representing the IO input into a FakeState
 ofInput :: String -> FakeState
 ofInput s = FakeState (s ++ "\n") id
 
+-- | Runs the fakeIO on a given input string, returning the output string
 outputOf :: Monad m => FakeIO (m s) -> String -> m String
 outputOf fakeIO input = e >> return (output state [])
   where
     (e, state) = runState' fakeIO (ofInput input)
 
+-- | Runs the fakeIO on a given input string,
+-- returing the final transformed given internal state
 finalStateOf :: Monad m => FakeIO (m s) -> String -> m s
 finalStateOf fakeIO input = e
   where

@@ -5,8 +5,8 @@ import BSyntax (BInstruction (..))
 import Data.Foldable (Foldable (toList))
 import Data.Function ((&))
 import Data.List.NonEmpty (NonEmpty (..))
+import JumpProgram (mkJumpProgram)
 import Parser (parse)
-import Program (mkProgram)
 import Test.HUnit ()
 import Test.QuickCheck
   ( Arbitrary (..),

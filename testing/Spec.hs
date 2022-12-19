@@ -1,31 +1,16 @@
+import Arm64ToStringTest (tArm64ToString)
+import BParserTest qualified
 import CompilerTest qualified
+import Test.HUnit (runTestTT)
 import UnitTests qualified
 import WInterpreterTest qualified
 import WParserTest qualified
 
 main :: IO ()
-main =
-  do
-    -- putStrLn "s"
-    -- return ()
-    -- putStrLn "Running Parser Tests"
-    -- UnitTests.testWS99Bottles
-    -- UnitTests.testWSFib
-
-    -- UnitTests.testBFCat
-
-    -- WParserTest.qc
-    -- WInterpreterTest.qc
-    -- WParserTest.qc
-    CompilerTest.qc
-
--- UnitTests.testWSHelloWorld -- WORKS
--- UnitTests.run100_2 -- WORKS
-
--- NO
-
--- UnitTests.testWSDivDoub
-
--- UnitTests.main
-
--- UnitTests.testWSTruthMachine
+main = do
+  runTestTT tArm64ToString
+  WParserTest.qc
+  BParserTest.qc
+  WInterpreterTest.qc
+  CompilerTest.qc
+  UnitTests.main

@@ -31,7 +31,6 @@ parseToken '[' = Just LBracket
 parseToken ']' = Just RBracket
 parseToken _ = Nothing
 
--- TODO: SHOULD EXTRACT THIS TO Parser.hs, bit repeated
 tokenize :: String -> [Token]
 tokenize = mapMaybe parseToken
 
