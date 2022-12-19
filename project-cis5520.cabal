@@ -100,7 +100,8 @@ library
       WStepper,
       ASyntax,
       Compiler,
-      WCompiler
+      WCompiler,
+      Helper
       
   hs-source-dirs:
       src

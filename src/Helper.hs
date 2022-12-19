@@ -1,4 +1,4 @@
-module WParser where
+module Helper where
 
 import Control.Applicative (Alternative (many, some, (<|>)), Applicative (liftA2))
 import Control.Monad.Trans (MonadTrans (..))
@@ -19,11 +19,29 @@ type WCommand = WInstruction WLabel
 type WParser a = Parser Token a
 
 tokenize :: String -> [Token]
-tokenize ('[' : 'S' : 'P' : 'A' : 'C' : 'E' : ']' : s) = Space : tokenize s
-tokenize ('[' : 'T' : 'A' : 'B' : ']' : s) = Tab : tokenize s
+tokenize ('[' : 'S' : 'p' : 'a' : 'c' : 'e' : ']' : s) = Space : tokenize s
+tokenize ('[' : 'T' : 'a' : 'b' : ']' : s) = Tab : tokenize s
 tokenize ('[' : 'L' : 'F' : ']' : s) = LF : tokenize s
 tokenize (c : cs) = tokenize cs
 tokenize [] = []
+
+tokenToChar :: Token -> Char
+tokenToChar Space = ' '
+tokenToChar Tab = '\t'
+tokenToChar LF = '\n'
+
+compile :: String -> String
+compile s = map tokenToChar $ tokenize s
+
+main :: IO ()
+main = do
+  putStrLn "Input filename: "
+  filename <- getLine
+  program <- readFile filename
+  writeFile "res.txt" $ compile program
+
+-- >>> compile "[Space][Space][Space][LF][Space][LF][Space][Tab][LF][Tab][Tab][Tab][Tab][Tab][LF][Tab][Space][Space][LF][LF][Space][Space][Tab][LF][Space][Space][Space][Tab][LF][Tab][LF][Space][Tab][LF][Space][LF][Tab][LF][LF][Space][Space][Space][LF][Space][Space][Space][LF][Tab][LF][Space][Tab][LF][LF][LF]"
+-- "   \n \n \t\n\t\t\t\t\t\n\t  \n\n  \t\n   \t\n\t\n \t\n \n\t\n\n   \n   \n\t\n \t\n\n\n"
 
 constPTok :: Token -> a -> WParser a
 constPTok t = (token t $>)
