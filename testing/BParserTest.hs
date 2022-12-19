@@ -30,7 +30,7 @@ instructionToTokens instr = case instr of
   DecrByte -> [Minus]
   Output -> [Period]
   Input -> [Comma]
-  While b -> LBracket : foldr (\x acc -> instructionToTokens x ++ acc) [RBracket] b
+  While b -> LBracket : foldMap instructionToTokens b <> [RBracket]
 
 prop_roundtrip_tokens :: [BInstruction] -> Bool
 prop_roundtrip_tokens cs = case bParseTokens (concatMap instructionToTokens cs) of
@@ -61,13 +61,11 @@ instance Arbitrary BProgramString where
 --   return $ concatMap instructionToTokens t & map tokenToChar
 
 prop_program_parse :: BProgramString -> Bool
-prop_program_parse (BP s) = case bParseString s of
-  Nothing -> False
-  Just _ -> True
+prop_program_parse (BP s) = not . null $ bParseString s
 
 qc :: IO ()
 qc = do
-  putStrLn "roundtrip_tokens"
+  putStrLn "bparser_roundtrip_tokens"
   quickCheck prop_roundtrip_tokens
-  putStrLn "program_parse"
+  putStrLn "bparser_program_parse"
   quickCheck prop_program_parse

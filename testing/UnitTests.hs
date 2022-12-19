@@ -7,7 +7,6 @@ import BStepper qualified
 import BSyntax (BInstruction)
 import Data.Function
 import FakeIO (outputOf)
-import GHC.IO.Handle.Types qualified
 import Program (listToArray, mkProgram)
 import System.Process
 import Test.HUnit (Test)
@@ -36,7 +35,8 @@ main ::
   Language a ->
   IO ()
 main dir ext args lang = do
-  program <- readFile ("program." ++ ext)
+  let totalPath = dir ++ "/program"
+  program <- readFile (totalPath ++ "." ++ ext)
   createInputFile dir args
   case parse lang program of
     Nothing -> error "Invalid program"
@@ -44,7 +44,6 @@ main dir ext args lang = do
       case interpret lang parsed args of
         Nothing -> error "Unable to parse"
         Just expected -> do
-          let totalPath = dir ++ "/program." ++ ext
           -- avengers assemble
           runScript $ "as -o " ++ totalPath ++ ".o " ++ totalPath ++ ".s"
           -- compile ARM assembly
@@ -62,17 +61,14 @@ main dir ext args lang = do
           assert $ expected == actual
 
 test :: IO ()
-test = main "test_files" "test" "" wLanguage
+test = main "test_files/ws/helloworld" "ws" "" wLanguage
 
 runScript ::
-  String ->
-  IO
-    ( Maybe GHC.IO.Handle.Types.Handle,
-      Maybe GHC.IO.Handle.Types.Handle,
-      Maybe GHC.IO.Handle.Types.Handle,
-      ProcessHandle
-    )
-runScript s = s & shell & createProcess
+  String -> IO ()
+runScript s = do
+  (_, _, _, handle) <- s & shell & createProcess
+  waitForProcess handle
+  return ()
 
 runInterpreter :: [a] -> String
 runInterpreter = error "not implemented yet"

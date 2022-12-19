@@ -123,16 +123,23 @@ mov x30, x22
 ret
 _start:
 // push
-mov x0, #5
+mov x0, #4
 str x0, [sp, #-16]!
 // push
-mov x0, #-3
+mov x0, #-7
 str x0, [sp, #-16]!
+// discard
+ldr x0, [sp], #16
 // push
-mov x0, #-3
+mov x0, #7
 str x0, [sp, #-16]!
 // outputNum
 bl _output_num
+// slide
+mov x0, #0
+bl _slide
+// outputChar
+bl _output_char
 // end
 b end
 end:

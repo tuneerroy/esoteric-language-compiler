@@ -7,7 +7,7 @@ import Data.Functor (($>))
 import Data.List (foldl', intercalate)
 import Data.List.NonEmpty (NonEmpty, nonEmpty)
 import Data.Maybe (mapMaybe)
-import Parser (Parser, parse, parseFromFile, token, tokens)
+import Parser (Parser, eof, parse, parseFromFile, token, tokens)
 import WSyntax (WBop (..), WCond (..), WInstruction (..))
 
 data Token = Space | Tab | LF deriving (Eq, Show, Ord)
@@ -101,7 +101,7 @@ commandP = asum [ioP, stackP, arithP, flowP, heapP]
 
 blockP :: WParser [WCommand]
 -- blockP = many (commandP <* token LF <|> commandP)
-blockP = many commandP
+blockP = many commandP <* eof
 
 wParseTokens :: [Token] -> Maybe [WCommand]
 wParseTokens = parse blockP

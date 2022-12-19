@@ -106,9 +106,7 @@ instance Arbitrary WProgramString where
         oneof [(c :) <$> mixGarbage cs, (:) <$> garbageChar <*> mixGarbage s]
 
 prop_program_parse :: WProgramString -> Bool
-prop_program_parse (WP s) = case wParseString s of
-  Nothing -> False
-  Just _ -> True
+prop_program_parse (WP s) = not . null $ wParseString s
 
 qc :: IO ()
 qc = do

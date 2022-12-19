@@ -114,9 +114,9 @@ validOutputProgram =
   stackValidate
     <$> programOf
       ( QC.frequency
-          [ (2, Push <$> arbitrary),
+          [ (5, Push <$> arbitrary),
             (1, smallStackInstr),
-            (1, outputInstr)
+            (3, outputInstr)
           ]
       )
 
@@ -128,8 +128,8 @@ validInputProgram =
   stackValidate
     <$> programOf
       ( QC.frequency
-          [ (2, Push <$> arbitrary),
+          [ (5, Push <$> arbitrary),
             (1, smallStackInstr),
-            (1, inputInstr)
+            (3, inputInstr)
           ]
       )

@@ -6,13 +6,13 @@ import Data.Function ((&))
 import Data.List (intercalate)
 import Data.Maybe (isJust)
 import FakeIO (outputOf)
+import GHC.TopHandler (flushStdHandles)
 import Program (listToArray, mkProgram)
-import System.Process (CreateProcess, createProcess, shell)
+import System.Process (CreateProcess, createProcess, shell, waitForProcess)
 import Test.HUnit (Test, assert, runTestTT, (~:))
 import Test.QuickCheck (Arbitrary (..), Property)
 import Test.QuickCheck qualified as QC
 import Test.QuickCheck.Gen (Gen)
-import Test.QuickCheck.Monadic (monadicIO, run)
 import Test.QuickCheck.Monadic qualified as QC
 import Test.QuickCheck.Property qualified as QC
 import WArbPrograms (validOutputProgram)
@@ -62,7 +62,7 @@ temp = readFile "out.txt"
 
 -- | Quickcheck
 prop_model :: [WCommand] -> Property
-prop_model commands = monadicIO $ do
+prop_model commands = QC.monadicIO $ do
   --Get the interpreted output
   let maybeInterpretedOutput = do
         arr <- mkProgram commands
@@ -79,15 +79,21 @@ prop_model commands = monadicIO $ do
         & map toArm64String
         & intercalate "\n"
         & writeFile progFile
-        & run
+        & QC.run
 
       -- Run the shell script
-      run $ createProcess script
+      (_, _, _, handle) <- QC.run $ createProcess script
+      QC.run $ waitForProcess handle
 
       -- Read in the output
-      executableOutput <- run $ readFile outFile
+      executableOutput <- QC.run $ readFile outFile
 
-      QC.assert (executableOutput == interpretedOutput)
+      QC.assert (filter badChar executableOutput == filter badChar interpretedOutput)
+  where
+    badChar :: Char -> Bool
+    badChar c =
+      let asciiCode = fromEnum c
+       in asciiCode >= 32 && asciiCode <= 255
 
 qc :: IO ()
 qc = do
