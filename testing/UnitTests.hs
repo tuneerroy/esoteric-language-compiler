@@ -5,6 +5,8 @@ import BCompiler qualified
 import BParser qualified
 import BStepper qualified
 import BSyntax (BInstruction)
+import Control.Monad (forM_)
+import Data.Foldable (sequenceA_)
 import Data.Function ((&))
 import FakeIO (outputOf)
 import Program (listToArray, mkProgram)
@@ -28,13 +30,13 @@ import WSyntax ()
 --
 
 -- Directory -> Filename -> Program Args -> Parser
-main ::
+createUnitTest ::
   String -> -- Directory Name, Ex: "test_files"
   String -> --Filename Extension, Ex: ".ws"
   String -> -- Program Args, Ex: "12+23-*"
   Language a ->
   IO ()
-main dir ext args lang = do
+createUnitTest dir ext args lang = do
   let totalPath = dir ++ "/program"
   program <- readFile (totalPath ++ "." ++ ext)
   writeFile (dir ++ "/in.txt") args
@@ -59,12 +61,63 @@ main dir ext args lang = do
           -- run executable and output to "output.txt"
           runScript $ "./" ++ totalPath ++ " > " ++ dir ++ "/out.txt"
           actual <- readFile (dir ++ "/out.txt")
-          putStr $ "Expected: <>" ++ expected ++ "<>"
-          putStr $ "Actual: <>" ++ actual ++ "<>"
+          putStr $ "Expected: <>" ++ expected ++ "<>\n"
+          putStr $ "Actual: <>" ++ actual ++ "<>\n"
           assert $ expected == actual
 
-test :: IO ()
-test = main "test_files/ws/helloworld" "ws" "" wLanguage
+wsFilePath :: String
+wsFilePath = "test_files/ws/"
+
+bfFilePath :: String
+bfFilePath = "test_files/bf/"
+
+testWSHelloWorld :: IO ()
+testWSHelloWorld =
+  createUnitTest
+    (wsFilePath ++ "helloworld")
+    "ws"
+    ""
+    wLanguage
+
+testWSAsterikGrid :: IO ()
+testWSAsterikGrid =
+  createUnitTest
+    (wsFilePath ++ "asterikgrid")
+    "ws"
+    ""
+    wLanguage
+
+testWSCat :: IO ()
+testWSCat =
+  createUnitTest
+    (wsFilePath ++ "cat")
+    "ws"
+    "gema kgk aem134 523fekma"
+    wLanguage
+
+testWSDivDoub :: IO ()
+testWSDivDoub =
+  createUnitTest
+    (wsFilePath ++ "divdoub")
+    "ws"
+    ""
+    wLanguage
+
+testWS1To100 :: IO ()
+testWS1To100 =
+  createUnitTest
+    (wsFilePath ++ "print1to100")
+    "ws"
+    ""
+    wLanguage
+
+testTruthMachine :: IO ()
+testTruthMachine =
+  createUnitTest
+    (wsFilePath ++ "truthmachine")
+    "ws"
+    ""
+    wLanguage
 
 runScript ::
   String -> IO ()
@@ -72,9 +125,6 @@ runScript s = do
   (_, _, _, handle) <- s & shell & createProcess
   waitForProcess handle
   return ()
-
-runInterpreter :: [a] -> String
-runInterpreter = error "not implemented yet"
 
 data Language a = Language
   { parse :: String -> Maybe [a],
@@ -98,26 +148,13 @@ bLanguage = Language BParser.bParseString bInterpreter BCompiler.compileProgram
 bInterpreter :: [BInstruction] -> String -> Maybe String
 bInterpreter = undefined
 
--- bInterpreter instrs inputs =
---   case outputOf (BStepper.runProgram instrs) inputs of
---     Left err -> Nothing
---     Right s -> Just s
-
--- class Language a where
---   parse :: String -> Maybe [a]
---   interpret :: [a] -> String -> Maybe String
---   compile :: [a] -> [AInstruction]
-
--- instance Language WCommand where
---   parse :: String -> Maybe [WCommand]
---   parse = WParser.wParseString
-
---   interpret :: [WCommand] -> String -> Maybe String
---   interpret commands inputs = do
---     instrs <- mkProgram commands
---     case outputOf (runProgram instrs) inputs of
---       Left err -> Nothing
---       Right s -> Just s
-
---   compile :: [WCommand] -> [AInstruction]
---   compile = WCompiler.compileProgram
+main :: IO ()
+main =
+  sequenceA_
+    [ testWSHelloWorld,
+      testWSAsterikGrid,
+      testWSCat,
+      testWSDivDoub,
+      testWS1To100,
+      testTruthMachine
+    ]

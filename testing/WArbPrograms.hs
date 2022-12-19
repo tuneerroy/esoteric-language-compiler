@@ -1,6 +1,7 @@
 -- | Arbitrary instances for different complexities/validities of programs
 module WArbPrograms where
 
+import Control.Applicative (Applicative (liftA2))
 import Control.Monad.State.Lazy (MonadState (..), State, evalState)
 import NonNeg (NonNeg)
 import Test.QuickCheck (Arbitrary (..), Property)

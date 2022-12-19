@@ -15,6 +15,7 @@ import Control.Monad.State.Lazy (StateT, modify)
 import Control.Monad.Trans (MonadTrans (..))
 import Data.Map (Map)
 import Data.Map qualified as Map
+import Data.Maybe (fromMaybe)
 import GHC.Arr (Ix (range), (!))
 import Program (Program, ProgramState, listToArray)
 import WSyntax (WBop (..), WCond (..), WInstruction (..))
@@ -42,7 +43,6 @@ data WError
   | InvalidOutputChar
   | ValStackEmpty
   | CallStackEmpty
-  | HeapKeyNotFound
   | LabelFound
   | DivideByZero
   deriving (Eq, Show)
@@ -121,9 +121,8 @@ toProgramState program = do
       put (store & heap %~ Map.insert addr val, pc)
     Retrieve -> do
       addr <- pop
-      case store ^. heap & Map.lookup addr of
-        Nothing -> throwError HeapKeyNotFound
-        Just n -> push n
+      let n = fromMaybe 0 (store ^. heap & Map.lookup addr)
+      push n
   unless (instr == End) $ do
     (store, pc) <- get
     put (store, pc + 1)
@@ -161,14 +160,14 @@ instance MonadReadWrite m => MonadReadWrite (StateT s m) where
   writeString :: String -> StateT s m ()
   writeString = lift . writeString
 
-execProgram :: MonadReadWrite m => Program WInstruction -> m (Either WError ())
+execProgram :: MonadReadWrite m => Program WInstruction -> m (Either WError (WStore, Int))
 execProgram program = do
   let programState = toProgramState program
-  runExceptT $ evalStateT programState initState
+  runExceptT $ execStateT programState initState
 
-execProgramIO :: Program WInstruction -> IO ()
+execProgramIO :: Program WInstruction -> IO (WStore, Int)
 execProgramIO program = do
   possibleError <- execProgram program
   case possibleError of
     Left err -> error $ show err
-    Right () -> return ()
+    Right state -> return state
