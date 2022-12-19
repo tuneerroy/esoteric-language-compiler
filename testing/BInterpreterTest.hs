@@ -1,7 +1,6 @@
 module WInterpreterTest (qc) where
 
 import Control.Monad.Identity (Identity (..))
-import Data.Function
 import Program (listToArray)
 import Test.HUnit (Assertion, Counts, Test (..), assert, runTestTT, (~:), (~?=))
 import Test.QuickCheck (Property)
@@ -19,9 +18,9 @@ instance MonadReadWrite Identity where
 
 prop_verifyEmptyStack :: [WInstruction Int] -> Property
 prop_verifyEmptyStack instrs = case err of
-  Left ValStackEmpty -> instrs & QC.collect ValStackEmpty . not . stackVerify
+  Left ValStackEmpty -> QC.collect ValStackEmpty $ not $ stackVerify instrs
   Left _ -> QC.property QC.Discard
-  Right () -> instrs & QC.collect "success" . QC.property . stackVerify
+  Right () -> QC.collect "success" $ QC.property $ stackVerify instrs
   where
     Identity err = runProgram $ listToArray instrs
 
