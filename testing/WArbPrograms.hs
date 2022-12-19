@@ -1,13 +1,13 @@
 -- | Arbitrary instances for different complexities/validities of programs
 module WArbPrograms where
 
-import Control.Monad.State.Lazy (State, MonadState (..), evalState)
+import Control.Monad.State.Lazy (MonadState (..), State, evalState)
+import NonNeg (NonNeg)
 import Test.QuickCheck (Arbitrary (..), Property)
 import Test.QuickCheck qualified as QC
 import Test.QuickCheck.Arbitrary (Arbitrary)
 import Test.QuickCheck.Gen (Gen)
 import WSyntax (WInstruction (..))
-import NonNeg (NonNeg)
 
 -- | Quickcheck tests
 numPops :: WInstruction l -> Int
@@ -51,21 +51,33 @@ numPushes Store = 0
 numPushes Retrieve = 1
 
 class InstructionSet a where
-    unpack :: a -> WInstruction Int
+  unpack :: a -> WInstruction Int
+
+arbStackInstr :: Gen (WInstruction l)
+arbStackInstr =
+  QC.oneof
+    [ Push <$> arbitrary,
+      pure Dup,
+      pure Swap,
+      pure Discard,
+      Copy <$> arbitrary,
+      Slide <$> arbitrary,
+      Arith <$> arbitrary
+    ]
 
 smallStackInstr :: Gen (WInstruction l)
-smallStackInstr = QC.frequency
-        [ (3, Push <$> arbitrary),
-          (1, pure Dup),
-          (1, pure Swap),
-          (1, pure Discard),
-          (1, Copy <$> arbitrary),
-          (1, Slide <$> arbitrary),
-          (1, Arith <$> arbitrary)
-        ]
+smallStackInstr = do
+  instr <- arbStackInstr
+  case instr of
+    Copy n -> return (Copy $ toEnum (fromEnum n `mod` 5))
+    Slide n -> return (Slide $ toEnum (fromEnum n `mod` 5))
+    _ -> return instr
 
 programOf :: Gen (WInstruction l) -> Gen [WInstruction l]
 programOf gen = (++ [End]) <$> QC.listOf gen
+
+stackProgram :: Gen [WInstruction l]
+stackProgram = programOf smallStackInstr
 
 stackVerify :: [WInstruction l] -> Bool
 stackVerify = aux 0
@@ -88,3 +100,36 @@ stackValidate l = evalState (mStackValidate l) 0
           (x :) <$> mStackValidate xs
         else mStackValidate xs
     mStackValidate [] = return []
+
+validStackProgram :: Gen [WInstruction l]
+validStackProgram =
+  stackValidate
+    <$> programOf (QC.oneof [smallStackInstr, Push <$> arbitrary])
+
+outputInstr :: Gen (WInstruction l)
+outputInstr = QC.elements [OutputChar, OutputNum]
+
+validOutputProgram :: Gen [WInstruction l]
+validOutputProgram =
+  stackValidate
+    <$> programOf
+      ( QC.frequency
+          [ (2, Push <$> arbitrary),
+            (1, smallStackInstr),
+            (1, outputInstr)
+          ]
+      )
+
+inputInstr :: Gen (WInstruction l)
+inputInstr = QC.elements [InputChar, InputNum]
+
+validInputProgram :: Gen [WInstruction l]
+validInputProgram =
+  stackValidate
+    <$> programOf
+      ( QC.frequency
+          [ (2, Push <$> arbitrary),
+            (1, smallStackInstr),
+            (1, inputInstr)
+          ]
+      )

@@ -1,12 +1,11 @@
 module CompilerTest (qc) where
 
 import ASyntax (toArm64String)
-import Control.Lens (Identity (..))
-import Control.Monad.Identity (Identity)
 import Control.Monad.Reader (MonadReader (ask), MonadTrans (lift), ReaderT (runReaderT))
 import Data.Function ((&))
 import Data.List (intercalate)
-import Data.Map qualified as Map
+import Data.Maybe (isJust)
+import FakeIO (outputOf)
 import Program (listToArray, mkProgram)
 import System.Process (CreateProcess, createProcess, shell)
 import Test.HUnit (Test, assert, runTestTT, (~:))
@@ -15,16 +14,22 @@ import Test.QuickCheck qualified as QC
 import Test.QuickCheck.Gen (Gen)
 import Test.QuickCheck.Monadic (monadicIO, run)
 import Test.QuickCheck.Monadic qualified as QC
+import Test.QuickCheck.Property qualified as QC
+import WArbPrograms (validOutputProgram)
 import WCompiler (compileProgram)
 import WParser (WCommand)
+import WParserTest qualified
 import WStepper (MonadReadWrite (readChar, writeString), WError (ValStackEmpty), initState, runProgram, runProgramIO)
 import WSyntax (WInstruction (..))
 
-outFile :: FilePath
-outFile = "test_files/qcoutput/prog.s"
+progFile :: FilePath
+progFile = "test_files/qcoutput/prog.s"
 
 script :: CreateProcess
-script = shell "test_files/script.sh"
+script = shell "test_files/qcoutput/script.sh"
+
+outFile :: FilePath
+outFile = "test_files/qcoutput/out.txt"
 
 s :: CreateProcess
 s = shell "bash script.sh"
@@ -55,42 +60,36 @@ temp = readFile "out.txt"
 -- >>> temp
 -- "Hola, mundo\n"
 
-newtype FileO a = FileO (ReaderT FilePath IO a)
-  deriving (Functor, Applicative, Monad)
-
-instance MonadReadWrite FileO where
-  readChar :: FileO Char
-  readChar = error "No read instance for FileO"
-  writeString :: String -> FileO ()
-  writeString s = FileO $ do
-    filePath <- ask
-    lift $ appendFile filePath s
-
 -- | Quickcheck
 prop_model :: [WCommand] -> Property
 prop_model commands = monadicIO $ do
-  -- Write the assembly file
-  compileProgram commands
-    & map toArm64String
-    & intercalate "\n"
-    & writeFile outFile
-    & run
+  --Get the interpreted output
+  let maybeInterpretedOutput = do
+        arr <- mkProgram commands
+        case outputOf (runProgram arr) [] of
+          Left _ -> Nothing
+          Right s -> return s
 
-  -- Run the shell script
+  -- If no output is interpreted, fail entirely
+  case maybeInterpretedOutput of
+    Nothing -> QC.stop QC.rejected
+    Just interpretedOutput -> do
+      -- Write the assembly file
+      compileProgram commands
+        & map toArm64String
+        & intercalate "\n"
+        & writeFile progFile
+        & run
 
-  QC.assert True
+      -- Run the shell script
+      run $ createProcess script
 
-example :: [WCommand]
-example = [Push 1, OutputNum]
+      -- Read in the output
+      executableOutput <- run $ readFile outFile
 
-runThing :: IO ()
-runThing =
-  compileProgram example
-    & map toArm64String
-    & intercalate "\n"
-    & writeFile outFile
-
--- >>> runThing
+      QC.assert (executableOutput == interpretedOutput)
 
 qc :: IO ()
-qc = do return ()
+qc = do
+  putStrLn "Prop Model"
+  QC.quickCheck $ QC.forAll validOutputProgram prop_model

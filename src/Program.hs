@@ -4,10 +4,10 @@ import Control.Monad.State (MonadState (get, put), State)
 import Control.Monad.State.Lazy (evalState)
 import Data.Map (Map)
 import Data.Map qualified as Map
-import GHC.Arr (Array, listArray)
+import GHC.Arr (Array, listArray, (!))
 import Test.HUnit (Test (..), (~:), (~?=))
 import WParser (WLabel)
-import WSyntax (WBop (..), WInstruction (..))
+import WSyntax (WBop (..), WCond (..), WInstruction (..))
 
 -- | An instruction in a program can have a text label
 --   that can be replaced by an index at compile time
@@ -64,8 +64,5 @@ mkProgramTest =
   "mkProgram tests"
     ~: TestList
       [ mkProgram sampleProgramNoLabels ~?= Just (listToArray [Push 5, Dup, Arith Add, End]),
-        mkProgram sampleProgramWithLabels ~?= Just (listToArray [Label 0])
+        mkProgram sampleProgramWithLabels ~?= Just (listToArray [])
       ]
-
--- if a WInstruction is in the block, it will be in the Array as well
--- prop_program_contains_ins

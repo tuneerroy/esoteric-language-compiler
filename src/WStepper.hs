@@ -88,16 +88,16 @@ toProgramState program = do
     Arith wb -> do
       b <- pop
       a <- pop
-      if wb == Div && b == 0 then
-        throwError DivideByZero
-      else do
-        let op = case wb of
-              Add -> (+)
-              Sub -> (-)
-              Mul -> (*)
-              Div -> div
-              Mod -> mod
-        push $ op a b
+      if wb `elem` [Div, Mod] && b == 0
+        then throwError DivideByZero
+        else do
+          let op = case wb of
+                Add -> (+)
+                Sub -> (-)
+                Mul -> (*)
+                Div -> div
+                Mod -> mod
+          push $ op a b
     Label n -> throwError LabelFound
     Call n -> put (store & callStack %~ (pc :), n)
     Branch wc n -> do
