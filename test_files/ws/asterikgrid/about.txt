@@ -1,0 +1,17 @@
+Pseudocode:
+
+Integer i = 100
+Start LOOP:
+  i = i - 1
+  If(i < 0)
+    Exit program
+  Print "*"
+  If(i modulo-10 == 0)
+    Print new-line
+  Go to next iteration of LOOP
+
+  Credit:
+
+  Kevin Cruijssen
+
+  https://codegolf.stackexchange.com/questions/88653/print-a-10-by-10-grid-of-asterisks/165417#165417

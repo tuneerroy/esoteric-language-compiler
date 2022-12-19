@@ -1,0 +1,23 @@
+Pseudocode:
+
+Integer sum = 0
+Integer input = STDIN as integer
+Integer n = input
+Start LOOP:
+  If(n == 0):
+    Jump to Label DONE
+  Integer t = n modulo-10
+  sum = sum + t
+  n = n integer-divided by 10
+  Go to next iteration of LOOP
+
+DONE:
+  sum = sum * 2
+  Integer result = input % sum
+  Print result as integer to STDOUT
+
+Credit:
+
+Kevin Cruijssen
+
+https://codegolf.stackexchange.com/questions/129596/am-i-divisible-by-double-the-sum-of-my-digits/217735#217735

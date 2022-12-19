@@ -1,7 +1,9 @@
 module BSyntax where
 
+import Control.Monad.State (MonadState (..))
+import Control.Monad.State.Lazy (MonadTrans (..))
 import Test.QuickCheck (Arbitrary (arbitrary, shrink), Gen)
-import Test.QuickCheck.Gen (elements, oneof)
+import Test.QuickCheck.Gen (elements, listOf, oneof)
 
 data BInstruction
   = IncrPtr -- ptr++
@@ -17,18 +19,17 @@ data BInstruction
 
 instance Arbitrary BInstruction where
   arbitrary :: Gen BInstruction
-  arbitrary =
-    oneof $
-      (While <$> arbitrary) :
-      ( pure
-          <$> [ IncrPtr,
-                DecrPtr,
-                IncrByte,
-                DecrByte,
-                Output,
-                Input
-              ]
-      )
+  arbitrary = aux maxDepth
+    where
+      maxDepth :: Int
+      maxDepth = 3
+
+      aux :: Int -> Gen BInstruction
+      aux 0 = simpleGen
+      aux n = oneof [While <$> listOf (aux $ n - 1), simpleGen]
+
+      simpleGen :: Gen BInstruction
+      simpleGen = elements [IncrPtr, DecrPtr, IncrByte, DecrByte, Output, Input]
 
   shrink :: BInstruction -> [BInstruction]
   shrink (While b) = b

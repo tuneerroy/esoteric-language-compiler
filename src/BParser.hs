@@ -5,7 +5,7 @@ import Control.Applicative (Alternative (many))
 import Data.Foldable (asum)
 import Data.Functor (($>))
 import Data.Maybe (mapMaybe)
-import Parser (Parser, parse, parseFromFile, token, tokens)
+import Parser (Parser, eof, parse, parseFromFile, token, tokens)
 
 data Token
   = Geq
@@ -50,15 +50,13 @@ commandB =
               (Period, Output),
               (Comma, Input)
             ]
-            --   (LBracket, WhileStart ()),
-            --   (RBracket, WhileEnd ())
     )
   where
     whileParser :: BParser BInstruction
-    whileParser = While <$> (token LBracket *> blockB <* token RBracket)
+    whileParser = While <$> (token LBracket *> many commandB <* token RBracket)
 
 blockB :: BParser [BInstruction]
-blockB = many commandB
+blockB = many commandB <* eof
 
 bParseTokens :: [Token] -> Maybe [BInstruction]
 bParseTokens = parse blockB

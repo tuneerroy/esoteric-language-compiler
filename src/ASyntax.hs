@@ -1,5 +1,6 @@
 module ASyntax where
 
+import Data.List
 import Test.HUnit (Test (TestList), runTestTT, (~:), (~?=))
 
 data Reg64 = Reg Int | SP -- between 0 and 31 or SP
@@ -140,6 +141,9 @@ tArm64ToString =
         toArm64String (Balign 16) ~?= ".balign 16",
         toArm64String (Allocate "label" 200) ~?= "label: .space 200, 0"
       ]
+
+instructionsToStrings :: [AInstruction] -> String
+instructionsToStrings assembly = intercalate "\n" (map toArm64String assembly)
 
 -- >>> runTestTT tArm64ToString
 -- Counts {cases = 36, tried = 36, errors = 0, failures = 0}
