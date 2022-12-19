@@ -3,21 +3,23 @@ module BSyntax where
 import Test.QuickCheck (Arbitrary (arbitrary, shrink), Gen)
 import Test.QuickCheck.Gen (elements, oneof)
 
-data BInstruction a
+data BInstruction
   = IncrPtr -- ptr++
   | DecrPtr -- ptr--
   | IncrByte -- (*ptr)++
   | DecrByte -- (*ptr)--
   | Output -- putchar(*ptr);
   | Input -- ptr = getchar();
-  | WhileStart a -- while (*ptr) {
-  | WhileEnd a -- }
+  | While [BInstruction]
+  --   | WhileStart a -- while (*ptr) {
+  --   | WhileEnd a -- }
   deriving (Eq, Show)
 
-instance Arbitrary a => Arbitrary (BInstruction a) where
-  arbitrary :: Arbitrary a => Gen (BInstruction a)
+instance Arbitrary BInstruction where
+  arbitrary :: Gen BInstruction
   arbitrary =
     oneof $
+      (While <$> arbitrary) :
       ( pure
           <$> [ IncrPtr,
                 DecrPtr,
@@ -27,7 +29,6 @@ instance Arbitrary a => Arbitrary (BInstruction a) where
                 Input
               ]
       )
-        ++ fmap (<$> arbitrary) [WhileStart, WhileEnd]
 
-  shrink :: BInstruction a -> [BInstruction a]
+  shrink :: BInstruction -> [BInstruction]
   shrink v = []

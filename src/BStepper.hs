@@ -35,9 +35,8 @@ data BError = MissingMatchingBracket | ProgramOutOfBounds
 
 -- TODO: maybe extract runProgram out? everything dealing with program counter
 
-runProgram :: forall m. (ProgramState BStore m, MonadReadWrite m, MonadError BError m) => Program BInstruction -> m ()
-runProgram program = do
-  (store, pc) <- get
+runProgram :: forall m. (MonadReadWrite m, MonadError BError m) => (BStore, [BInstruction]) -> m ()
+runProgram (store, program) = do
   instr <- case program ^? ix pc of
     Nothing -> throwError ProgramOutOfBounds
     Just wi -> return wi
@@ -56,10 +55,11 @@ runProgram program = do
     Input -> do
       v <- readChar
       put (store & heap %~ Map.insert (_ptr store) (fromEnum v & toEnum), pc)
-    WhileStart v -> case Map.findWithDefault 0 (_ptr store) (_heap store) of
-      0 -> put (store, v)
-      _ -> put (store, pc)
-    WhileEnd v -> put (store, v)
+    While s -> undefined
+  -- WhileStart v -> case Map.findWithDefault 0 (_ptr store) (_heap store) of
+  --   0 -> put (store, v)
+  --   _ -> put (store, pc)
+  -- WhileEnd v -> put (store, v)
   put (store, pc + 1)
   unless (pc == snd (bounds program)) $ do
     runProgram program
@@ -82,12 +82,10 @@ instance MonadReadWrite m => MonadReadWrite (ExceptT e m) where
   writeString :: String -> ExceptT e m ()
   writeString = lift . writeString
 
-instance MonadReadWrite m => MonadReadWrite (StateT s (ExceptT e m)) where
-  readChar :: StateT s (ExceptT e m) Char
+instance MonadReadWrite m => MonadReadWrite (StateT s m) where
+  readChar :: StateT s m Char
   readChar = lift readChar
-  writeString :: String -> StateT s (ExceptT e m) ()
+  writeString :: String -> StateT s m ()
   writeString = lift . writeString
-
-type ProgramMonad = StateT (BStore, Int) (ExceptT BError IO)
 
 -- x = runExceptT $ runStateT performExampleProgram (initStore, 0)

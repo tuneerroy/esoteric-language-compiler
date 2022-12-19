@@ -4,6 +4,8 @@ import ASyntax (AInstruction (..), BranchCond (..), Reg32 (..), Reg64 (..))
 import WParser (Token (..), WLabel (..))
 import WSyntax (WBop (..), WCond (Any, Neg, Zero), WInstruction (..))
 
+-- TODO: maybe make this a type class?
+
 compileCommand :: (Eq a, NonWhitespaceShow a) => WInstruction a -> [AInstruction]
 compileCommand i = case i of
   InputChar ->
