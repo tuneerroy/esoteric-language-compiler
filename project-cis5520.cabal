@@ -93,13 +93,15 @@ library
       BSyntax,
       BParser,
       BStepper,
+      BCompiler,
       NonNeg,
       WSyntax,
       WParser,
       WStepper,
       ASyntax,
       Compiler,
-      WCompiler
+      WCompiler,
+      Helper
       
   hs-source-dirs:
       src

@@ -35,6 +35,7 @@ data AInstruction
   | LdrO Reg64 Reg64 Reg64 -- ldr Rd, [Rt, Rs]     (Rt is address, Rs holds offset)
   | StrO Reg64 Reg64 Reg64 -- str Rd, [Rt, Rs]     (Rt is address, Rs holds offset)
   | Str Reg64 Reg64 -- str Rd, [Rt]
+  | Strb Reg32 Reg64 -- strb wd, [Rt]
   -- Flow control
   | ALabel String -- label:
   | Bl String -- bl label
@@ -72,6 +73,7 @@ toArm64String s = case s of
   LdrO rd rt rs -> "ldr " ++ reg rd ++ ", [" ++ reg rt ++ ", " ++ reg rs ++ "]"
   StrO rd rt rs -> "str " ++ reg rd ++ ", [" ++ reg rt ++ ", " ++ reg rs ++ "]"
   Str rd rt -> "str " ++ reg rd ++ ", [" ++ reg rt ++ "]"
+  Strb (Reg32 i) rt -> "strb w" ++ show i ++ ", [" ++ reg rt ++ "]"
   ALabel label -> label ++ ":"
   Bl label -> "bl " ++ label
   B cond label -> "b" ++ condToStr cond ++ " " ++ label
@@ -140,4 +142,4 @@ tArm64ToString =
       ]
 
 -- >>> runTestTT tArm64ToString
--- Counts {cases = 35, tried = 35, errors = 0, failures = 0}
+-- Counts {cases = 36, tried = 36, errors = 0, failures = 0}
