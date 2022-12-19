@@ -11,17 +11,8 @@ newtype State' s a = S (s -> (a, s))
 runState' :: State' s a -> s -> (a, s)
 runState' (S f) = f
 
-{-
-There are two other ways of evaluating the state monad. The first only
-returns the final result,
--}
-
 evalState' :: State' s a -> s -> a
 evalState' (S f) x = fst $ f x
-
-{-
-and the second only returns the final state.
--}
 
 execState' :: State' s a -> s -> s
 execState' (S f) x = snd $ f x

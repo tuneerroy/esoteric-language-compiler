@@ -14,14 +14,14 @@ _output_char:
 mov x0, #1
 adrp x1, buf@page
 add x1, x1, buf@pageoff
-ldr x8, [sp], #0
+ldr x8, [sp], #16
 str x8, [x1]
 mov x2, #1
 mov x16, #4
 svc #0x80
 ret
 _output_num:
-ldr x0, [sp], #0
+ldr x0, [sp], #16
 str x30, [sp, #-16]!
 _int_to_ascii:
 cmp x0, #0
@@ -30,7 +30,6 @@ mov x1, #45
 str x1, [sp, #-16]!
 mov x27, x0
 bl _output_char
-ldr x18, [sp], #16
 mov x0, x27
 mov x27, #0
 negs x0, x0
@@ -52,7 +51,6 @@ _print_stack:
 cmp x27, #0
 ble _done_ascii
 bl _output_char
-ldr x28, [sp], #16
 sub x27, x27, #1
 bl _print_stack
 _done_ascii:
@@ -118,62 +116,60 @@ mul x23, x23, x21
 ldr x1, [sp], #16
 adrp x2, heap@page
 add x2, x2, heap@pageoff
+mov x3, #8
+mul x1, x1, x3
 str x23, [x2, x1]
 mov x30, x22
 ret
 _start:
 // push
-mov x0, #-1
-str x0, [sp, #-16]!
-// retrieve
-ldr x1, [sp], #16
-adrp x2, heap@page
-add x2, x2, heap@pageoff
-ldr x0, [x2, x1]
+mov x0, #14
 str x0, [sp, #-16]!
 // push
-mov x0, #4
+mov x0, #13
 str x0, [sp, #-16]!
 // push
-mov x0, #4
+mov x0, #-6
 str x0, [sp, #-16]!
 // store
 ldr x0, [sp], #16
 ldr x1, [sp], #16
+mov x3, #8
 adrp x2, heap@page
 add x2, x2, heap@pageoff
+mul x1, x1, x3
 str x0, [x2, x1]
+// dup
+ldr x0, [sp], #16
+str x0, [sp, #-16]!
+str x0, [sp, #-16]!
 // outputNum
 bl _output_num
 // push
-mov x0, #3
-str x0, [sp, #-16]!
-// push
-mov x0, #-1
-str x0, [sp, #-16]!
-// push
 mov x0, #4
 str x0, [sp, #-16]!
-// retrieve
-ldr x1, [sp], #16
-adrp x2, heap@page
-add x2, x2, heap@pageoff
-ldr x0, [x2, x1]
+// push
+mov x0, #13
 str x0, [sp, #-16]!
 // retrieve
 ldr x1, [sp], #16
-adrp x2, heap@page
-add x2, x2, heap@pageoff
-ldr x0, [x2, x1]
-str x0, [sp, #-16]!
-// retrieve
-ldr x1, [sp], #16
+mov x3, #8
+mul x1, x1, x3
 adrp x2, heap@page
 add x2, x2, heap@pageoff
 ldr x0, [x2, x1]
 str x0, [sp, #-16]!
 // push
-mov x0, #-2
+mov x0, #-6
+str x0, [sp, #-16]!
+// push
+mov x0, #-15
+str x0, [sp, #-16]!
+// push
+mov x0, #-11
+str x0, [sp, #-16]!
+// push
+mov x0, #5
 str x0, [sp, #-16]!
 // end
 b end

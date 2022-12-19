@@ -119,7 +119,7 @@ validOutputProgram =
       ( QC.frequency
           [ (5, Push <$> arbitrary),
             (1, smallStackInstr),
-            (3, outputInstr)
+            (2, outputInstr)
           ]
       )
 

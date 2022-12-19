@@ -38,6 +38,7 @@ initState = (initStore, 0)
 data WError
   = ProgramOutOfBounds
   | InvalidOutputChar
+  | NegativeHeapKey
   | ValStackEmpty
   | CallStackEmpty
   | LabelFound
@@ -115,11 +116,14 @@ toProgramState program = do
     Store -> do
       val <- pop
       addr <- pop
-      put (store & heap %~ Map.insert addr val, pc)
+      if addr < 0
+        then throwError NegativeHeapKey
+        else put (store & heap %~ Map.insert addr val, pc)
     Retrieve -> do
       addr <- pop
-      let n = fromMaybe 0 (store ^. heap & Map.lookup addr)
-      push n
+      if addr < 0
+        then throwError NegativeHeapKey
+        else push $ fromMaybe 0 (store ^. heap & Map.lookup addr)
   unless (instr == End) $ do
     (store, pc) <- get
     put (store, pc + 1)

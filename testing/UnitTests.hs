@@ -3,14 +3,15 @@ module UnitTests where
 import ASyntax (AInstruction, instructionsToStrings)
 import BCompiler qualified
 import BParser qualified
-import BStepper (execProgram, BStore)
+import BStepper (BStore, execProgram)
 import BStepper qualified
 import BSyntax (BInstruction)
 import Control.Monad (forM_)
 import Data.Foldable (sequenceA_)
 import Data.Function ((&))
 import Data.Functor (void)
-import FakeIO (outputOf, FakeIO)
+import Data.Functor.Identity (Identity (..))
+import FakeIO (FakeIO, outputOf)
 import Program (listToArray, mkProgram)
 import System.Process (createProcess, getPid, shell, waitForProcess)
 import Test.HUnit (Test)
@@ -19,7 +20,6 @@ import WCompiler (compileProgram)
 import WParser (WCommand, parseString)
 import WStepper (execProgram)
 import WSyntax ()
-import Data.Functor.Identity (Identity(..))
 
 -- take in filename (including directory)
 -- read in the data, hold in string
@@ -108,7 +108,7 @@ testWSCat =
   createUnitTest
     (wsFilePath ++ "cat")
     "ws"
-    "gema kgk aem134 523fekma"
+    "gema kgk aem134 45 523fekma"
     wLanguage
 
 testWSDivDoub :: IO ()
@@ -117,6 +117,14 @@ testWSDivDoub =
     (wsFilePath ++ "divdoub")
     "ws"
     ""
+    wLanguage
+
+testWSFib :: IO ()
+testWSFib =
+  createUnitTest
+    (wsFilePath ++ "fib")
+    "ws"
+    "10"
     wLanguage
 
 testWS1To100 :: IO ()
@@ -141,6 +149,14 @@ testBFBSort =
     (bfFilePath ++ "bsort")
     "b"
     ""
+    bLanguage
+
+testBFCat :: IO ()
+testBFCat =
+  createUnitTest
+    (bfFilePath ++ "cat")
+    "b"
+    "gjenamg 1214 fejnwam"
     bLanguage
 
 testBFFactorial :: IO ()
@@ -203,9 +219,11 @@ bLanguage :: Language BInstruction
 bLanguage = Language BParser.parseString bInterpreter BCompiler.compileProgram
 
 bInterpreter :: [BInstruction] -> String -> Maybe String
-bInterpreter instrs inputs = undefined where
-  x :: FakeIO BStore = BStepper.execProgram instrs
-  --let Identity s = outputOf (Identity <$> BStepper.execProgram instrs) inputs in Just s
+bInterpreter instrs inputs = undefined
+  where
+    x :: FakeIO BStore = BStepper.execProgram instrs
+
+--let Identity s = outputOf (Identity <$> BStepper.execProgram instrs) inputs in Just s
 
 main :: IO ()
 main =

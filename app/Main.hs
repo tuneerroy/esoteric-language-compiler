@@ -40,12 +40,12 @@ compile :: String -> Filetype -> Maybe String
 compile s ft =
   case ft of
     WS -> do
-      commands <- wParseString s
+      commands <- WParser.parseString s
       let assembly = WCompiler.compileProgram commands
       let assemblyStr = map toArm64String assembly
       return (intercalate "\n" assemblyStr)
     BF -> do
-      commands <- bParseString s
+      commands <- BParser.parseString s
       let assembly = BCompiler.compileProgram commands
       let assemblyStr = map toArm64String assembly
       return (intercalate "\n" assemblyStr)
@@ -55,11 +55,11 @@ compile s ft =
 --   commands <- parseString s
 --   return (intercalate "\n" $ compileProgram commands)
 
-compile :: String -> Maybe String
-compile s = do
-  commands <- WParser.parseString s
-  let assembly = WCompiler.compileProgram commands
-  -- commands <- BParser.parseString s
-  -- let assembly = BCompiler.compileProgram commands
-  let assemblyStr = map toArm64String assembly
-  return (intercalate "\n" assemblyStr)
+-- compile :: String -> Maybe String
+-- compile s = do
+--   commands <- WParser.parseString s
+--   let assembly = WCompiler.compileProgram commands
+--   -- commands <- BParser.parseString s
+--   -- let assembly = BCompiler.compileProgram commands
+--   let assemblyStr = map toArm64String assembly
+--   return (intercalate "\n" assemblyStr)
