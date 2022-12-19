@@ -107,7 +107,10 @@ compileCommand i = case i of
     ]
   Call a ->
     [ Comment "call",
-      Bl (toString a)
+      Adr (Reg 0),
+      AAddI (Reg 20) (Reg 0) 12,
+      Bl (toString a),
+      MovI (Reg 20) 0
     ]
   Jump a ->
     [ Comment "branch",
@@ -127,6 +130,7 @@ compileCommand i = case i of
     ]
   Return ->
     [ Comment "return",
+      Mov (Reg 30) (Reg 20),
       Ret
     ]
   End ->

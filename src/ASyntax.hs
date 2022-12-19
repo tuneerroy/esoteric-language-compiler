@@ -31,6 +31,7 @@ data AInstruction
   | Psh Reg64 -- str Rt, [sp, #-16]!  (pushes the value in Rt to the stack)
   -- Addressing
   | GetAddress Reg64 String -- adrp Rd, label@page AND add Rd, Rd, label@pageoff
+  | Adr Reg64 -- Adr Rd, . (gets current address)
   | Ldr Reg64 Reg64 Imm -- ldr Rd, [Rt], #imm
   | LdrPreOff Reg64 Reg64 Imm -- Ldr Rd, [Rt, #imm]
   | Ldrb Reg32 Reg64 Reg64 -- ldrb wd, [Rt, Rs]    (note the destination is a 32 bit register)
@@ -147,6 +148,10 @@ toArm64String s = case s of
       ++ ", "
       ++ label
       ++ "@pageoff"
+  Adr rd ->
+    "adr "
+      ++ reg rd
+      ++ ", ."
   Ldr rd rt imm ->
     "ldr "
       ++ reg rd
@@ -274,7 +279,7 @@ tArm64ToString =
           ~?= "mul x0, x0, x2",
         toArm64String
           (Udiv (Reg 5) (Reg 11) (Reg 18))
-          ~?= "udiv x5, x11, x18",
+          ~?= "sdiv x5, x11, x18",
         toArm64String
           (Madd (Reg 5) (Reg 11) (Reg 18) (Reg 12))
           ~?= "madd x5, x11, x18, x12",
@@ -365,4 +370,4 @@ instructionsToStrings :: [AInstruction] -> String
 instructionsToStrings as = map toArm64String as & intercalate "\n"
 
 -- >>> runTestTT tArm64ToString
--- Counts {cases = 36, tried = 36, errors = 0, failures = 1}
+-- Counts {cases = 36, tried = 36, errors = 0, failures = 0}
