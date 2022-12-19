@@ -60,7 +60,7 @@ compileCommand i = case i of
     ]
   Copy n ->
     [ Comment "copy",
-      LdrPreOff (Reg 0) SP ((fromEnum n - 1) * 16),
+      LdrPreOff (Reg 0) SP (fromEnum n * 16),
       Psh (Reg 0)
     ]
   Slide n ->
