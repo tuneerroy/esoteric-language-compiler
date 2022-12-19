@@ -37,8 +37,8 @@ commandToTokens c = case c of
   Dup -> [Space, LF, Space]
   Swap -> [Space, LF, Tab]
   Discard -> [Space, LF, LF]
-  Copy n -> [Space, Tab, Space] ++ numToTokens n
-  Slide n -> [Space, Tab, LF] ++ numToTokens n
+  Copy n -> [Space, Tab, Space] ++ numToTokens (fromEnum n)
+  Slide n -> [Space, Tab, LF] ++ numToTokens (fromEnum n)
   -- Arith
   Arith Add -> [Tab, Space, Space, Space]
   Arith Sub -> [Tab, Space, Space, Tab]
