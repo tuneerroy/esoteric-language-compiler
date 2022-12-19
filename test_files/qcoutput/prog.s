@@ -123,72 +123,10 @@ mov x30, x22
 ret
 _start:
 // push
-mov x0, #72
+mov x0, #1
 str x0, [sp, #-16]!
-// outputChar
-bl _output_char
-// push
-mov x0, #101
-str x0, [sp, #-16]!
-// outputChar
-bl _output_char
-// push
-mov x0, #108
-str x0, [sp, #-16]!
-// outputChar
-bl _output_char
-// push
-mov x0, #108
-str x0, [sp, #-16]!
-// outputChar
-bl _output_char
-// push
-mov x0, #111
-str x0, [sp, #-16]!
-// outputChar
-bl _output_char
-// push
-mov x0, #44
-str x0, [sp, #-16]!
-// outputChar
-bl _output_char
-// push
-mov x0, #32
-str x0, [sp, #-16]!
-// outputChar
-bl _output_char
-// push
-mov x0, #119
-str x0, [sp, #-16]!
-// outputChar
-bl _output_char
-// push
-mov x0, #111
-str x0, [sp, #-16]!
-// outputChar
-bl _output_char
-// push
-mov x0, #114
-str x0, [sp, #-16]!
-// outputChar
-bl _output_char
-// push
-mov x0, #108
-str x0, [sp, #-16]!
-// outputChar
-bl _output_char
-// push
-mov x0, #100
-str x0, [sp, #-16]!
-// outputChar
-bl _output_char
-// push
-mov x0, #33
-str x0, [sp, #-16]!
-// outputChar
-bl _output_char
-// end
-b end
+// outputNum
+bl _output_num
 end:
 mov x0, #0
 mov x16, #1

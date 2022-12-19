@@ -1,8 +1,11 @@
 module CompilerTest (qc) where
 
+import ASyntax (toArm64String)
+import Control.Lens (Identity (..))
+import Control.Monad.Identity (Identity)
 import Control.Monad.Reader (MonadReader (ask), MonadTrans (lift), ReaderT (runReaderT))
-import Control.Monad.State (State, StateT (..), evalState)
-import Control.Monad.State.Lazy (MonadState (..))
+import Data.Function ((&))
+import Data.List (intercalate)
 import Data.Map qualified as Map
 import Program (listToArray, mkProgram)
 import System.Process (CreateProcess, createProcess, shell)
@@ -12,18 +15,16 @@ import Test.QuickCheck qualified as QC
 import Test.QuickCheck.Gen (Gen)
 import Test.QuickCheck.Monadic (monadicIO, run)
 import Test.QuickCheck.Monadic qualified as QC
+import WCompiler (compileProgram)
+import WParser (WCommand)
 import WStepper (MonadReadWrite (readChar, writeString), WError (ValStackEmpty), initState, runProgram, runProgramIO)
 import WSyntax (WInstruction (..))
-import Control.Monad.Identity (Identity)
-import Control.Lens (Identity(..))
-import WParser (WCommand)
-import WCompiler (compileProgram)
-import ASyntax (toArm64String)
-import Data.List (intercalate)
-import Data.Function ((&))
 
 outFile :: FilePath
-outFile = "/whitespace/quickCheckTest.asm"
+outFile = "test_files/qcoutput/prog.s"
+
+script :: CreateProcess
+script = shell "test_files/script.sh"
 
 s :: CreateProcess
 s = shell "bash script.sh"
@@ -68,7 +69,6 @@ instance MonadReadWrite FileO where
 -- | Quickcheck
 prop_model :: [WCommand] -> Property
 prop_model commands = monadicIO $ do
-
   -- Write the assembly file
   compileProgram commands
     & map toArm64String
@@ -76,12 +76,21 @@ prop_model commands = monadicIO $ do
     & writeFile outFile
     & run
 
-  
-
-  -- let assemblyStr = map toArm64String assembly
-  -- return (intercalate "\n" assemblyStr)
+  -- Run the shell script
 
   QC.assert True
+
+example :: [WCommand]
+example = [Push 1, OutputNum]
+
+runThing :: IO ()
+runThing =
+  compileProgram example
+    & map toArm64String
+    & intercalate "\n"
+    & writeFile outFile
+
+-- >>> runThing
 
 qc :: IO ()
 qc = do return ()
