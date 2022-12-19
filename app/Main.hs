@@ -30,15 +30,15 @@ main = do
           writeFile outputFilename compiled
             >>= return (putStrLn "Compiled program")
 
--- tryOFileConversion :: String -> Maybe String
--- tryOFileConversion (c : ".ws") = Just $ c : ".s"
--- tryOFileConversion (c : cs) = tryOFileConversion cs >>= (\cs' -> return (c : cs'))
--- tryOFileConversion _ = Nothing
-
 tryOFileConversion :: String -> Maybe String
-tryOFileConversion (c : ".b") = Just $ c : ".s"
+tryOFileConversion (c : ".ws") = Just $ c : ".s"
 tryOFileConversion (c : cs) = tryOFileConversion cs >>= (\cs' -> return (c : cs'))
 tryOFileConversion _ = Nothing
+
+-- tryOFileConversion :: String -> Maybe String
+-- tryOFileConversion (c : ".b") = Just $ c : ".s"
+-- tryOFileConversion (c : cs) = tryOFileConversion cs >>= (\cs' -> return (c : cs'))
+-- tryOFileConversion _ = Nothing
 
 -- compile :: String -> Maybe String
 -- compile s = do
@@ -47,9 +47,9 @@ tryOFileConversion _ = Nothing
 
 compile :: String -> Maybe String
 compile s = do
-  -- commands <- wParseString s
-  -- let assembly = WCompiler.compileProgram commands
-  commands <- bParseString s
-  let assembly = BCompiler.compileProgram commands
+  commands <- wParseString s
+  let assembly = WCompiler.compileProgram commands
+  -- commands <- bParseString s
+  -- let assembly = BCompiler.compileProgram commands
   let assemblyStr = map toArm64String assembly
   return (intercalate "\n" assemblyStr)
