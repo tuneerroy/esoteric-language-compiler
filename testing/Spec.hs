@@ -9,14 +9,20 @@ main = do
   -- return ()
   putStrLn "Running Parser Tests"
 
-  WParserTest.qc
-  WInterpreterTest.qc
-  WParserTest.qc
-  CompilerTest.qc
+  -- UnitTests.testBFCat
 
--- UnitTests.testWS1To100
--- UnitTests.testWSCat
--- UnitTests.testWSAsterikGrid
+  -- WParserTest.qc
+  -- WInterpreterTest.qc
+  -- WParserTest.qc
+  -- CompilerTest.qc
+
+  -- UnitTests.run100_2 -- WORKS
+
+  UnitTests.testWSAsterikGrid -- NO
+
+-- UnitTests.testWSFib
+
+-- UnitTests.testWSHelloWorld -- WORKS
 -- UnitTests.testWSDivDoub
 
 -- UnitTests.main

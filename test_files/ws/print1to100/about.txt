@@ -1,6 +1,6 @@
 Code with Comments:
 
-[Push  0 
+[Push  1 
 ][Label
   
 ][Dup 
@@ -13,7 +13,6 @@ Code with Comments:
 ][Subtract	  	][JmpNeg
 		
 ]
-
 
 Credit:
 

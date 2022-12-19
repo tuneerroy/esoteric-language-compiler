@@ -8,14 +8,12 @@ compileCommand :: (BInstruction, String) -> [AInstruction]
 compileCommand (ins, idx) = case ins of
   IncrPtr ->
     [ Comment "IncrPtr",
-      --   AAddI (Reg 29) (Reg 29) 1
       Ldr (Reg 0) SP 16,
       AAddI (Reg 0) (Reg 0) 1,
       Psh (Reg 0)
     ]
   DecrPtr ->
     [ Comment "DecrPtr",
-      --   ASubI (Reg 29) (Reg 29) 1
       Ldr (Reg 0) SP 16,
       ASubI (Reg 0) (Reg 0) 1,
       Psh (Reg 0)
@@ -27,14 +25,6 @@ compileCommand (ins, idx) = case ins of
       AAddI (Reg 1) (Reg 1) 1,
       AAdd (Reg 0) (Reg 0) (Reg 29),
       Strb (Reg32 1) (Reg 0)
-      -- STACK BASED DOESNT WORK
-      --   LdrO (Reg 1) (Reg 29) (Reg 0),
-      --   AAddI (Reg 1) (Reg 1) 1,
-      --   StrO (Reg 1) (Reg 29) (Reg 0)
-      -- OLD OLD IS BELOW
-      --   Ldrb (Reg32 0) (Reg 29) (Reg 28),
-      --   AAddI (Reg 0) (Reg 0) 1,
-      --   Strb (Reg32 0) (Reg 29)
     ]
   DecrByte ->
     [ Comment "DecrByte",
@@ -43,49 +33,24 @@ compileCommand (ins, idx) = case ins of
       ASubI (Reg 1) (Reg 1) 1,
       AAdd (Reg 0) (Reg 0) (Reg 29),
       Strb (Reg32 1) (Reg 0)
-      -- STACK BASED
-      --   LdrO (Reg 1) (Reg 29) (Reg 0),
-      --   ASubI (Reg 1) (Reg 1) 1,
-      --   StrO (Reg 1) (Reg 29) (Reg 0)
-      -- OLD STUFF
-      --   Ldrb (Reg32 0) (Reg 29) (Reg 28),
-      --   ASubI (Reg 0) (Reg 0) 1,
-      --   Strb (Reg32 0) (Reg 29)
     ]
   Output ->
     [ Comment "Output",
       Ldr (Reg 0) SP 0,
       Ldrb (Reg32 1) (Reg 29) (Reg 0),
-      --   LdrO (Reg 1) (Reg 29) (Reg 0),
       Psh (Reg 1),
       Bl "_output_char",
       Ldr (Reg 0) SP 16
     ]
-  -- [ Comment "Output",
-  --   Ldrb (Reg32 0) (Reg 29) (Reg 28),
-  --   Psh (Reg 0),
-  --   Bl "_output_char",
-  --   Ldr (Reg 1) SP 16
-  -- ]
   Input ->
     [ Comment "Input",
       Bl "_input_char"
     ]
-  --   Input ->
-  --     [ Comment "Input",
-  --       Ldrb (Reg32 0) (Reg 29) (Reg 28),
-  --       Psh (Reg 0),
-  --       Bl "_input_char",
-  --       Ldr (Reg 1) SP 16
-  --     ]
   While b ->
     [ Comment "While",
       ALabel ("while" ++ idx),
-      --   Ldrb (Reg32 0) (Reg 29) (Reg 28),
       Ldr (Reg 0) SP 0,
-      --   bad attempt: LdrO (Reg 1) (Reg 29) (Reg 0),
       Ldrb (Reg32 1) (Reg 29) (Reg 0),
-      --   Cmp (Reg 0) 0,
       Cmp (Reg 1) 0,
       B ASyntax.EQ ("whileend" ++ idx)
     ]
@@ -143,6 +108,3 @@ footer =
 
 compileProgram :: [BInstruction] -> [AInstruction]
 compileProgram a = header ++ concatMap compileCommand (zip a (map show [0 ..])) ++ footer
-
--- compileProgram :: [BInstruction] -> String
--- compileProgram commands = intercalate "\n" $ map toArm64String $ compileToAssembly commands

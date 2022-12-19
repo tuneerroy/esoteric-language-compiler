@@ -48,7 +48,7 @@ commandToTokens c = case c of
   -- Flow
   Label (WLabel l) -> [LF, Space, Space] ++ toList l ++ [LF]
   Call (WLabel l) -> [LF, Space, Tab] ++ toList l ++ [LF]
-  Branch Any (WLabel l) -> [LF, Space, LF] ++ toList l ++ [LF]
+  Jump (WLabel l) -> [LF, Space, LF] ++ toList l ++ [LF]
   Branch Zero (WLabel l) -> [LF, Tab, Space] ++ toList l ++ [LF]
   Branch Neg (WLabel l) -> [LF, Tab, Tab] ++ toList l ++ [LF]
   Return -> [LF, Tab, LF]
