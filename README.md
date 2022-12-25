@@ -2,12 +2,12 @@
 
 Final project for 2022 Fall CIS 5520.
 
-By Tuneer Roy (tuneerroy), Nicholas Liu (liunicholas6), and Richard Chai (richardchai)
+Group Members:  
+Tuneer Roy _(github: tuneerroy, pennkey: tuneer)_  
+Nicholas Liu _(github: liunicholas6, pennkey: liun0)_  
+Richard Chai _(github: richardchai, pennkey: richchai)_
 
-PennKeys:
-Tunner Roy (tuneer)
-Nicholas Liu (liun0)
-Richard Chai (richchai)
+_Note:_ Much work was done using Visual Studio's Live Share extension.
 
 ## File overview:
 
@@ -42,5 +42,3 @@ MonadReadWrite.hs describes a typeclass for handling input and output, so that p
 WarbPrograms.hs provides generators for programs of differing levels of complexity. At the base level there are programs that only modify the stack, then there are programs that also do IO, and then there are programs that perform heap operations.
 
 By keeping track of the number of pushes and pops that each stack instruction performs, we can generate arbitrary jump-free programs that don't pop an empty stack - the most common error in Whitespace.
-
-Heap operations oftentimes have 
