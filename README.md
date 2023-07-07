@@ -1,4 +1,4 @@
-# Whitespace Compiler
+# Esoteric Language Compiler
 
 Final project for 2022 Fall CIS 5520.
 
@@ -7,7 +7,7 @@ Tuneer Roy _(github: tuneerroy, pennkey: tuneer)_
 Nicholas Liu _(github: liunicholas6, pennkey: liun0)_  
 Richard Chai _(github: richardchai, pennkey: richchai)_
 
-_Note:_ Much work was done using Visual Studio's Live Share extension.
+_Note:_ Much work was done using Visual Studio's Live Share extension. **Most of the work was also done in a single all-nighter so ignore the commit messages and random files in the repo. :)**
 
 ## File overview:
 
