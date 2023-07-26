@@ -59,8 +59,6 @@ prop_model commands = QC.monadicIO $ do
       -- Read in the output
       executableOutput <- QC.run $ readFile outFile
 
-      let condition = executableOutput == interpretedOutput
-
       QC.assert (executableOutput == interpretedOutput)
 
 qc :: IO ()
